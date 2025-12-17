@@ -6,11 +6,11 @@ const HeroSection = () => {
           Mood Music Management
         </p>
 
-        <h1 className="font-display text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-[1.1] tracking-tight opacity-0 animate-blur-in animation-delay-400">
+        <h1 className="font-display text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-[1.1] tracking-tight opacity-0 animate-blur-in animation-delay-400 text-gradient">
           PARASENS
         </h1>
 
-        <p className="mt-8 md:mt-12 text-xl md:text-2xl lg:text-3xl text-muted-foreground font-light leading-relaxed max-w-2xl opacity-0 animate-fade-up animation-delay-800">
+        <p className="mt-8 md:mt-12 text-xl md:text-2xl lg:text-3xl text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto opacity-0 animate-fade-up animation-delay-800">
           Music for focused, quiet moments.
         </p>
 
@@ -39,7 +39,7 @@ const HeroSection = () => {
 
       {/* Subtle grain texture overlay */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-[0.015] z-0"
+        className="fixed inset-0 pointer-events-none opacity-[0.02] z-0"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
         }}
