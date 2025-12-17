@@ -6,12 +6,7 @@ const AboutSection = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const { ref: titleRef, isRevealed: titleRevealed } = useScrollReveal();
 
-  const lines = [
-    "PARASENS exists to create space.",
-    "Not to fill silence, but to shape it.",
-    ,
-    "This is mood, managed.",
-  ];
+  const lines = ["PARASENS exists to create space.", "Not to fill silence, but to shape it.", "This is mood, managed."];
 
   useEffect(() => {
     const observer = new IntersectionObserver(
