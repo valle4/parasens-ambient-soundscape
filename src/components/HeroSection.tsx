@@ -1,6 +1,6 @@
 const HeroSection = () => {
   return (
-    <section className="min-h-screen flex flex-col justify-center section-padding pt-32">
+    <section className="min-h-screen flex flex-col justify-center items-center section-padding pt-32 text-center">
       <div className="max-w-4xl">
         <p className="text-muted-foreground text-sm tracking-[0.3em] uppercase mb-8 opacity-0 animate-fade-in animation-delay-200">
           Mood Music Management
