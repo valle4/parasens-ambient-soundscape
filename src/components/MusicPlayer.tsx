@@ -66,7 +66,7 @@ const MusicPlayer = () => {
       <div className="max-w-5xl mx-auto">
         <div
           ref={headerRef}
-          className={`scroll-reveal ${headerRevealed ? "revealed" : ""}`}
+          className={`scroll-reveal text-center ${headerRevealed ? "revealed" : ""}`}
         >
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-4">
             Listen
@@ -79,7 +79,7 @@ const MusicPlayer = () => {
         {/* Genre Selector */}
         <div
           ref={genreRef}
-          className={`flex flex-wrap gap-2 md:gap-4 mb-12 md:mb-16 scroll-reveal scroll-reveal-delay-1 ${genreRevealed ? "revealed" : ""}`}
+          className={`flex flex-wrap justify-center gap-2 md:gap-4 mb-12 md:mb-16 scroll-reveal scroll-reveal-delay-1 ${genreRevealed ? "revealed" : ""}`}
         >
           {genres.map((genre) => (
             <button

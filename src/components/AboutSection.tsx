@@ -47,7 +47,7 @@ const AboutSection = () => {
       ref={sectionRef}
       className="min-h-screen section-padding flex items-center"
     >
-      <div className="max-w-3xl mx-auto">
+        <div className="max-w-3xl mx-auto text-center">
         <div
           ref={titleRef}
           className={`scroll-reveal ${titleRevealed ? "revealed" : ""}`}
