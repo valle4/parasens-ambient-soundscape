@@ -39,7 +39,7 @@ const ContactSection = () => {
       <div className="w-full max-w-2xl mx-auto">
         <div
           ref={headerRef}
-          className={`scroll-reveal ${headerRevealed ? "revealed" : ""}`}
+          className={`scroll-reveal text-center ${headerRevealed ? "revealed" : ""}`}
         >
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-4">
             Get in Touch
