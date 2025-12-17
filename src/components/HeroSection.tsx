@@ -11,7 +11,7 @@ const HeroSection = () => {
         </h1>
 
         <p className="mt-8 md:mt-12 text-xl md:text-2xl lg:text-3xl text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto opacity-0 animate-fade-up animation-delay-800">
-          Music for focused, quiet moments.
+          shapes silence
         </p>
 
         <div className="mt-16 md:mt-24 opacity-0 animate-fade-in animation-delay-1000">
@@ -26,12 +26,7 @@ const HeroSection = () => {
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M19 14l-7 7m0 0l-7-7m7 7V3"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
           </a>
         </div>
