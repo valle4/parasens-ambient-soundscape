@@ -22,7 +22,7 @@ const genres = [
 // Add your Spotify track IDs here
 // Get the ID from the Spotify URL: open.spotify.com/track/TRACK_ID
 const tracks: Track[] = [
-  { id: 1, title: "Quiet Morning", artist: "PARASENS", genre: "Ambient", spotifyId: "4uLU6hMCjMI75M1A2tKUQC" },
+  { id: 1, title: "haven", artist: "isima", genre: "Piano", spotifyId: "https://open.spotify.com/track/2jWn1bjTTyg1u19CUnMIwC?si=94f0549fa9ed4800" },
   { id: 2, title: "Rainfall", artist: "PARASENS", genre: "Sleep", spotifyId: "3n3Ppam7vgaVa1iaRUc9Lp" },
   { id: 3, title: "Nocturne in Grey", artist: "PARASENS", genre: "Piano", spotifyId: "1HNkqx9Ahdgi1Ixy2xkKkL" },
   { id: 4, title: "Late Hours", artist: "PARASENS", genre: "Jazz", spotifyId: "6rqhFgbbKwnb9MLmUQDhG6" },
