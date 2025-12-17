@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
+import { useState } from "react";
 import useScrollReveal from "@/hooks/useScrollReveal";
 
 interface Track {
@@ -7,7 +6,7 @@ interface Track {
   title: string;
   artist: string;
   genre: string;
-  duration: string;
+  spotifyId: string; // Spotify track ID (from the URL: open.spotify.com/track/THIS_ID)
 }
 
 const genres = [
@@ -20,39 +19,27 @@ const genres = [
   "Focus",
 ];
 
+// Add your Spotify track IDs here
+// Get the ID from the Spotify URL: open.spotify.com/track/TRACK_ID
 const tracks: Track[] = [
-  { id: 1, title: "Quiet Morning", artist: "PARASENS", genre: "Ambient", duration: "4:32" },
-  { id: 2, title: "Rainfall", artist: "PARASENS", genre: "Sleep", duration: "6:15" },
-  { id: 3, title: "Nocturne in Grey", artist: "PARASENS", genre: "Piano", duration: "3:48" },
-  { id: 4, title: "Late Hours", artist: "PARASENS", genre: "Jazz", duration: "5:21" },
-  { id: 5, title: "Drift", artist: "PARASENS", genre: "Ambient", duration: "7:03" },
-  { id: 6, title: "Gentle Rest", artist: "PARASENS", genre: "Lullabies", duration: "4:45" },
-  { id: 7, title: "Deep Work", artist: "PARASENS", genre: "Focus", duration: "8:12" },
-  { id: 8, title: "Moonlit Keys", artist: "PARASENS", genre: "Piano", duration: "5:06" },
+  { id: 1, title: "Quiet Morning", artist: "PARASENS", genre: "Ambient", spotifyId: "4uLU6hMCjMI75M1A2tKUQC" },
+  { id: 2, title: "Rainfall", artist: "PARASENS", genre: "Sleep", spotifyId: "3n3Ppam7vgaVa1iaRUc9Lp" },
+  { id: 3, title: "Nocturne in Grey", artist: "PARASENS", genre: "Piano", spotifyId: "1HNkqx9Ahdgi1Ixy2xkKkL" },
+  { id: 4, title: "Late Hours", artist: "PARASENS", genre: "Jazz", spotifyId: "6rqhFgbbKwnb9MLmUQDhG6" },
+  { id: 5, title: "Drift", artist: "PARASENS", genre: "Ambient", spotifyId: "0u2P5u6lvoDfwTYjAADbn4" },
+  { id: 6, title: "Gentle Rest", artist: "PARASENS", genre: "Lullabies", spotifyId: "2WfaOiMkCvy7F5fcp2zZ8L" },
+  { id: 7, title: "Deep Work", artist: "PARASENS", genre: "Focus", spotifyId: "4cOdK2wGLETKBW3PvgPWqT" },
+  { id: 8, title: "Moonlit Keys", artist: "PARASENS", genre: "Piano", spotifyId: "1dfeR4HaWDbWqFHLkxsg1d" },
 ];
 
 const MusicPlayer = () => {
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [progress, setProgress] = useState(0);
 
   const { ref: headerRef, isRevealed: headerRevealed } = useScrollReveal();
   const { ref: genreRef, isRevealed: genreRevealed } = useScrollReveal();
   const { ref: tracksRef, isRevealed: tracksRevealed } = useScrollReveal();
-  const { ref: controlsRef, isRevealed: controlsRevealed } = useScrollReveal();
-
-  // Simulate progress when playing
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setProgress((prev) => (prev >= 100 ? 0 : prev + 0.5));
-      }, 100);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying]);
+  const { ref: playerRef, isRevealed: playerRevealed } = useScrollReveal();
 
   const filteredTracks =
     selectedGenre === "All"
@@ -61,33 +48,6 @@ const MusicPlayer = () => {
 
   const handleTrackSelect = (track: Track) => {
     setCurrentTrack(track);
-    setIsPlaying(true);
-    setProgress(0);
-  };
-
-  const handlePlayPause = () => {
-    if (!currentTrack && filteredTracks.length > 0) {
-      setCurrentTrack(filteredTracks[0]);
-      setIsPlaying(true);
-    } else {
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (!currentTrack) return;
-    const currentIndex = filteredTracks.findIndex((t) => t.id === currentTrack.id);
-    const prevIndex = currentIndex > 0 ? currentIndex - 1 : filteredTracks.length - 1;
-    setCurrentTrack(filteredTracks[prevIndex]);
-    setProgress(0);
-  };
-
-  const handleNext = () => {
-    if (!currentTrack) return;
-    const currentIndex = filteredTracks.findIndex((t) => t.id === currentTrack.id);
-    const nextIndex = currentIndex < filteredTracks.length - 1 ? currentIndex + 1 : 0;
-    setCurrentTrack(filteredTracks[nextIndex]);
-    setProgress(0);
   };
 
   return (
@@ -144,7 +104,7 @@ const MusicPlayer = () => {
             >
               <div className="flex items-center gap-6">
                 <span className="text-muted-foreground text-sm w-6">
-                  {currentTrack?.id === track.id && isPlaying ? (
+                  {currentTrack?.id === track.id ? (
                     <span className="inline-block w-2 h-2 bg-foreground rounded-full animate-pulse-slow" />
                   ) : (
                     String(index + 1).padStart(2, "0")
@@ -155,76 +115,28 @@ const MusicPlayer = () => {
                   <p className="text-sm text-muted-foreground">{track.genre}</p>
                 </div>
               </div>
-              <span className="text-muted-foreground text-sm">{track.duration}</span>
             </div>
           ))}
         </div>
 
-        {/* Player Controls */}
+        {/* Spotify Embed Player */}
         <div
-          ref={controlsRef}
-          className={`border-t border-border pt-8 scroll-reveal scroll-reveal-delay-3 ${controlsRevealed ? "revealed" : ""}`}
+          ref={playerRef}
+          className={`border-t border-border pt-8 scroll-reveal scroll-reveal-delay-3 ${playerRevealed ? "revealed" : ""}`}
         >
-          {/* Progress Bar */}
-          <div className="mb-6">
-            <div className="h-[2px] bg-border w-full">
-              <div
-                className="h-full bg-foreground transition-all duration-100"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              {currentTrack ? (
-                <div>
-                  <p className="font-medium truncate">{currentTrack.title}</p>
-                  <p className="text-sm text-muted-foreground">{currentTrack.artist}</p>
-                </div>
-              ) : (
-                <p className="text-muted-foreground">Select a track to play</p>
-              )}
-            </div>
-
-            <div className="flex items-center gap-6">
-              <button
-                onClick={handlePrevious}
-                className="p-2 text-muted-foreground hover:text-foreground transition-colors duration-300"
-              >
-                <SkipBack className="w-5 h-5" />
-              </button>
-
-              <button
-                onClick={handlePlayPause}
-                className="p-4 border border-foreground hover:bg-foreground hover:text-background transition-all duration-300"
-              >
-                {isPlaying ? (
-                  <Pause className="w-5 h-5" />
-                ) : (
-                  <Play className="w-5 h-5" />
-                )}
-              </button>
-
-              <button
-                onClick={handleNext}
-                className="p-2 text-muted-foreground hover:text-foreground transition-colors duration-300"
-              >
-                <SkipForward className="w-5 h-5" />
-              </button>
-
-              <button
-                onClick={() => setIsMuted(!isMuted)}
-                className="p-2 text-muted-foreground hover:text-foreground transition-colors duration-300 ml-4"
-              >
-                {isMuted ? (
-                  <VolumeX className="w-5 h-5" />
-                ) : (
-                  <Volume2 className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-          </div>
+          {currentTrack ? (
+            <iframe
+              src={`https://open.spotify.com/embed/track/${currentTrack.spotifyId}?utm_source=generator&theme=0`}
+              width="100%"
+              height="152"
+              frameBorder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+              className="rounded-xl"
+            />
+          ) : (
+            <p className="text-muted-foreground text-center py-8">Select a track to play</p>
+          )}
         </div>
       </div>
     </section>
