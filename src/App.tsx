@@ -11,6 +11,10 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      {/* Immersive background layers */}
+      <div className="bg-orb-layer" />
+      <div className="vignette" />
+      
       <Toaster />
       <Sonner />
       <BrowserRouter>
