@@ -1,35 +1,20 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+import useScrollReveal from "@/hooks/useScrollReveal";
 
 const ContactSection = () => {
-  const [isVisible, setIsVisible] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     message: "",
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const sectionRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.2 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
+  const { ref: headerRef, isRevealed: headerRevealed } = useScrollReveal();
+  const { ref: formRef, isRevealed: formRevealed } = useScrollReveal();
+  const { ref: footerRef, isRevealed: footerRevealed } = useScrollReveal();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate form submission
     setIsSubmitted(true);
     setTimeout(() => {
       setFormData({ name: "", email: "", message: "" });
@@ -49,14 +34,12 @@ const ContactSection = () => {
   return (
     <section
       id="contact"
-      ref={sectionRef}
       className="min-h-screen section-padding flex items-center bg-card"
     >
       <div className="w-full max-w-2xl mx-auto">
         <div
-          className={`transition-all duration-1000 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
+          ref={headerRef}
+          className={`scroll-reveal ${headerRevealed ? "revealed" : ""}`}
         >
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-4">
             Get in Touch
@@ -67,21 +50,19 @@ const ContactSection = () => {
         </div>
 
         {isSubmitted ? (
-          <div
-            className={`text-center py-16 transition-all duration-500 ${
-              isVisible ? "opacity-100" : "opacity-0"
-            }`}
-          >
+          <div className="text-center py-16">
             <p className="text-xl font-light">Thank you for reaching out.</p>
             <p className="text-muted-foreground mt-2">We'll respond soon.</p>
           </div>
         ) : (
-          <form
-            onSubmit={handleSubmit}
-            className={`space-y-8 transition-all duration-1000 delay-200 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-            }`}
+          <div
+            ref={formRef}
+            className={`scroll-reveal scroll-reveal-delay-1 ${formRevealed ? "revealed" : ""}`}
           >
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-8"
+            >
             <div>
               <input
                 type="text"
@@ -123,13 +104,13 @@ const ContactSection = () => {
                 Send Message
               </button>
             </div>
-          </form>
+            </form>
+          </div>
         )}
 
         <div
-          className={`mt-24 pt-12 border-t border-border transition-all duration-1000 delay-400 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
+          ref={footerRef}
+          className={`mt-24 pt-12 border-t border-border scroll-reveal scroll-reveal-delay-2 ${footerRevealed ? "revealed" : ""}`}
         >
           <p className="text-muted-foreground text-sm">
             Or write directly:{" "}

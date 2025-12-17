@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
+import useScrollReveal from "@/hooks/useScrollReveal";
 
 interface Track {
   id: number;
@@ -36,25 +37,11 @@ const MusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.2 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
+  const { ref: headerRef, isRevealed: headerRevealed } = useScrollReveal();
+  const { ref: genreRef, isRevealed: genreRevealed } = useScrollReveal();
+  const { ref: tracksRef, isRevealed: tracksRevealed } = useScrollReveal();
+  const { ref: controlsRef, isRevealed: controlsRevealed } = useScrollReveal();
 
   // Simulate progress when playing
   useEffect(() => {
@@ -106,14 +93,12 @@ const MusicPlayer = () => {
   return (
     <section
       id="music"
-      ref={sectionRef}
       className="min-h-screen section-padding bg-card"
     >
       <div className="max-w-5xl mx-auto">
         <div
-          className={`transition-all duration-1000 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
+          ref={headerRef}
+          className={`scroll-reveal ${headerRevealed ? "revealed" : ""}`}
         >
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-4">
             Listen
@@ -125,9 +110,8 @@ const MusicPlayer = () => {
 
         {/* Genre Selector */}
         <div
-          className={`flex flex-wrap gap-2 md:gap-4 mb-12 md:mb-16 transition-all duration-1000 delay-200 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
+          ref={genreRef}
+          className={`flex flex-wrap gap-2 md:gap-4 mb-12 md:mb-16 scroll-reveal scroll-reveal-delay-1 ${genreRevealed ? "revealed" : ""}`}
         >
           {genres.map((genre) => (
             <button
@@ -146,9 +130,8 @@ const MusicPlayer = () => {
 
         {/* Track List */}
         <div
-          className={`space-y-1 mb-12 md:mb-16 transition-all duration-1000 delay-400 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
+          ref={tracksRef}
+          className={`space-y-1 mb-12 md:mb-16 scroll-reveal scroll-reveal-delay-2 ${tracksRevealed ? "revealed" : ""}`}
         >
           {filteredTracks.map((track, index) => (
             <div
@@ -179,9 +162,8 @@ const MusicPlayer = () => {
 
         {/* Player Controls */}
         <div
-          className={`border-t border-border pt-8 transition-all duration-1000 delay-600 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
+          ref={controlsRef}
+          className={`border-t border-border pt-8 scroll-reveal scroll-reveal-delay-3 ${controlsRevealed ? "revealed" : ""}`}
         >
           {/* Progress Bar */}
           <div className="mb-6">

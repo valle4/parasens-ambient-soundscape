@@ -50,6 +50,28 @@
   }
 
   .dark {
+    --background: 0 0% 98%;
+    --foreground: 0 0% 5%;
+    --card: 0 0% 96%;
+    --card-foreground: 0 0% 5%;
+    --popover: 0 0% 98%;
+    --popover-foreground: 0 0% 5%;
+    --primary: 0 0% 8%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 92%;
+    --secondary-foreground: 0 0% 15%;
+    --muted: 0 0% 90%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 85%;
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 0% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 0 0% 20%;
+  }
+
+  .dark {
     --background: 0 0% 5%;
     --foreground: 0 0% 95%;
 
@@ -131,6 +153,52 @@
   .button-minimal {
     @apply px-8 py-3 border border-foreground text-foreground hover:bg-foreground hover:text-background transition-all duration-500 text-sm tracking-[0.15em] uppercase;
   }
+
+  /* Gradient text for hero */
+  .text-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(0 0% 100%) 0%,
+      hsl(0 0% 70%) 25%,
+      hsl(0 0% 100%) 50%,
+      hsl(0 0% 60%) 75%,
+      hsl(0 0% 95%) 100%
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-shift 8s ease infinite;
+  }
+
+  /* Scroll reveal animations */
+  .scroll-reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .scroll-reveal-delay-1 {
+    transition-delay: 100ms;
+  }
+
+  .scroll-reveal-delay-2 {
+    transition-delay: 200ms;
+  }
+
+  .scroll-reveal-delay-3 {
+    transition-delay: 300ms;
+  }
+
+  .scroll-reveal-delay-4 {
+    transition-delay: 400ms;
+  }
 }
 
 @layer utilities {
@@ -199,6 +267,15 @@
   to {
     opacity: 1;
     filter: blur(0);
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
   }
 }
 
