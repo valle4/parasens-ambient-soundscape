@@ -19,8 +19,16 @@ const genres = [
   "Focus",
 ];
 
-// Add your Spotify track IDs here
-// Get the ID from the Spotify URL: open.spotify.com/track/TRACK_ID
+// Helper to extract Spotify track ID from URL or return as-is if already an ID
+const extractSpotifyId = (input: string): string => {
+  if (input.includes('spotify.com/track/')) {
+    const match = input.match(/track\/([a-zA-Z0-9]+)/);
+    return match ? match[1] : input;
+  }
+  return input;
+};
+
+// Add your Spotify track IDs or full URLs here
 const tracks: Track[] = [
   { id: 1, title: "haven", artist: "isima", genre: "Piano", spotifyId: "https://open.spotify.com/track/2jWn1bjTTyg1u19CUnMIwC?si=94f0549fa9ed4800" },
   { id: 2, title: "Rainfall", artist: "PARASENS", genre: "Sleep", spotifyId: "3n3Ppam7vgaVa1iaRUc9Lp" },
@@ -126,7 +134,7 @@ const MusicPlayer = () => {
         >
           {currentTrack ? (
             <iframe
-              src={`https://open.spotify.com/embed/track/${currentTrack.spotifyId}?utm_source=generator&theme=0`}
+              src={`https://open.spotify.com/embed/track/${extractSpotifyId(currentTrack.spotifyId)}?utm_source=generator&theme=0`}
               width="100%"
               height="152"
               frameBorder="0"
