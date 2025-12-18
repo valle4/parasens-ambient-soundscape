@@ -1274,16 +1274,34 @@ const MusicPlayer = () => {
     return true;
   });
 
-  // Auto-play first track when genre changes
+  // Auto-play first track on initial load
   useEffect(() => {
-    if (filteredTracks.length > 0) {
+    if (!currentTrack && filteredTracks.length > 0) {
       setCurrentTrack(filteredTracks[0]);
     }
-  }, [selectedGenre, selectedSubCategory]);
+  }, []);
 
   const handleGenreSelect = (genre: string) => {
     setSelectedGenre(genre);
-    setSelectedSubCategory(null); // Reset sub-category when genre changes
+    setSelectedSubCategory(null);
+    // Auto-play first track of the new genre
+    const newFilteredTracks = tracks.filter((track) => genre === "All" || track.genre === genre);
+    if (newFilteredTracks.length > 0) {
+      setCurrentTrack(newFilteredTracks[0]);
+    }
+  };
+
+  const handleSubCategorySelect = (sub: string | null) => {
+    setSelectedSubCategory(sub);
+    // Auto-play first track of the new subcategory
+    const newFilteredTracks = tracks.filter((track) => {
+      if (selectedGenre !== "All" && track.genre !== selectedGenre) return false;
+      if (sub && track.subCategory !== sub) return false;
+      return true;
+    });
+    if (newFilteredTracks.length > 0) {
+      setCurrentTrack(newFilteredTracks[0]);
+    }
   };
 
   const handleTrackSelect = (track: Track) => {
@@ -1318,7 +1336,7 @@ const MusicPlayer = () => {
         {availableSubCategories.length > 0 && (
           <div className="flex flex-wrap justify-center gap-2 mb-12 md:mb-16">
             <button
-              onClick={() => setSelectedSubCategory(null)}
+              onClick={() => handleSubCategorySelect(null)}
               className={`text-xs px-3 py-1.5 rounded-full transition-all duration-200 ${
                 selectedSubCategory === null
                   ? "bg-foreground/10 text-foreground"
@@ -1330,7 +1348,7 @@ const MusicPlayer = () => {
             {availableSubCategories.map((sub) => (
               <button
                 key={sub}
-                onClick={() => setSelectedSubCategory(sub)}
+                onClick={() => handleSubCategorySelect(sub)}
                 className={`text-xs px-3 py-1.5 rounded-full transition-all duration-200 ${
                   selectedSubCategory === sub
                     ? "bg-foreground/10 text-foreground"
