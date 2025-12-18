@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Play, MousePointerClick } from "lucide-react";
+import { useState } from "react";
+import { Play, ChevronUp, MousePointerClick } from "lucide-react";
 import useScrollReveal from "@/hooks/useScrollReveal";
 
 interface Track {
@@ -1257,12 +1257,11 @@ const tracks: Track[] = [
 const MusicPlayer = () => {
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const [expandedTrackId, setExpandedTrackId] = useState<number | null>(null);
 
   const { ref: headerRef, isRevealed: headerRevealed } = useScrollReveal();
   const { ref: genreRef, isRevealed: genreRevealed } = useScrollReveal();
   const { ref: tracksRef, isRevealed: tracksRevealed } = useScrollReveal();
-  const { ref: playerRef, isRevealed: playerRevealed } = useScrollReveal();
 
   // Get available sub-categories for current genre
   const availableSubCategories = selectedGenre !== "All" ? subCategories[selectedGenre] || [] : [];
@@ -1274,38 +1273,19 @@ const MusicPlayer = () => {
     return true;
   });
 
-  // Auto-play first track on initial load
-  useEffect(() => {
-    if (!currentTrack && filteredTracks.length > 0) {
-      setCurrentTrack(filteredTracks[0]);
-    }
-  }, []);
-
   const handleGenreSelect = (genre: string) => {
     setSelectedGenre(genre);
     setSelectedSubCategory(null);
-    // Auto-play first track of the new genre
-    const newFilteredTracks = tracks.filter((track) => genre === "All" || track.genre === genre);
-    if (newFilteredTracks.length > 0) {
-      setCurrentTrack(newFilteredTracks[0]);
-    }
+    setExpandedTrackId(null);
   };
 
   const handleSubCategorySelect = (sub: string | null) => {
     setSelectedSubCategory(sub);
-    // Auto-play first track of the new subcategory
-    const newFilteredTracks = tracks.filter((track) => {
-      if (selectedGenre !== "All" && track.genre !== selectedGenre) return false;
-      if (sub && track.subCategory !== sub) return false;
-      return true;
-    });
-    if (newFilteredTracks.length > 0) {
-      setCurrentTrack(newFilteredTracks[0]);
-    }
+    setExpandedTrackId(null);
   };
 
   const handleTrackSelect = (track: Track) => {
-    setCurrentTrack(track);
+    setExpandedTrackId(expandedTrackId === track.id ? null : track.id);
   };
 
   return (
@@ -1364,66 +1344,60 @@ const MusicPlayer = () => {
         {/* Spacer when no sub-categories */}
         {availableSubCategories.length === 0 && <div className="mb-6 md:mb-10" />}
 
-        {/* Spotify Embed Player */}
-        <div
-          ref={playerRef}
-          className={`mb-8 scroll-reveal scroll-reveal-delay-2 ${playerRevealed ? "revealed" : ""}`}
-        >
-          {currentTrack && (
-            <div className="flex items-center justify-center gap-2 mb-4 text-muted-foreground animate-pulse">
-              <MousePointerClick className="w-4 h-4" />
-              <span className="text-sm">Click the player to start</span>
-            </div>
-          )}
-          {currentTrack ? (
-            <iframe
-              key={currentTrack.spotifyId}
-              src={`https://open.spotify.com/embed/track/${currentTrack.spotifyId}?utm_source=generator&theme=0`}
-              width="100%"
-              height="152"
-              frameBorder="0"
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="eager"
-              className="rounded-xl"
-            />
-          ) : (
-            <p className="text-muted-foreground text-center py-8">Select a track to play</p>
-          )}
-        </div>
-
         {/* Track List */}
         <div
           ref={tracksRef}
-          className={`max-h-[360px] overflow-y-auto border-t border-border pt-8 scroll-reveal scroll-reveal-delay-3 ${tracksRevealed ? "revealed" : ""}`}
+          className={`max-h-[500px] overflow-y-auto scroll-reveal scroll-reveal-delay-2 ${tracksRevealed ? "revealed" : ""}`}
         >
           <div className="space-y-1">
             {filteredTracks.map((track, index) => (
-              <div
-                key={track.id}
-                onClick={() => handleTrackSelect(track)}
-                className={`group flex items-center justify-between py-4 px-4 cursor-pointer transition-all duration-300 hover:bg-accent ${
-                  currentTrack?.id === track.id ? "bg-accent" : ""
-                }`}
-              >
-                <div className="flex items-center gap-6">
-                  <span className="text-muted-foreground text-sm w-6 flex items-center justify-center">
-                    {currentTrack?.id === track.id ? (
-                      <span className="inline-block w-2 h-2 bg-foreground rounded-full animate-pulse-slow" />
-                    ) : (
-                      <span className="group-hover:hidden">{String(index + 1).padStart(2, "0")}</span>
-                    )}
-                    {currentTrack?.id !== track.id && (
-                      <Play className="w-4 h-4 hidden group-hover:block fill-current" />
-                    )}
-                  </span>
-                  <div>
-                    <p className="font-medium">{track.title}</p>
-                    <p className="text-sm text-muted-foreground">{track.artist}</p>
+              <div key={track.id} className="border-b border-border/50 last:border-b-0">
+                {/* Track Row */}
+                <div
+                  onClick={() => handleTrackSelect(track)}
+                  className={`group flex items-center justify-between py-4 px-4 cursor-pointer transition-all duration-300 hover:bg-accent ${
+                    expandedTrackId === track.id ? "bg-accent" : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-6">
+                    <span className="text-muted-foreground text-sm w-6 flex items-center justify-center">
+                      {expandedTrackId === track.id ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <>
+                          <span className="group-hover:hidden">{String(index + 1).padStart(2, "0")}</span>
+                          <Play className="w-4 h-4 hidden group-hover:block fill-current" />
+                        </>
+                      )}
+                    </span>
+                    <div>
+                      <p className="font-medium">{track.title}</p>
+                      <p className="text-sm text-muted-foreground">{track.artist}</p>
+                    </div>
                   </div>
+                  <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                    {track.subCategory}
+                  </span>
                 </div>
-                <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                  {track.subCategory}
-                </span>
+
+                {/* Expandable Spotify Player */}
+                {expandedTrackId === track.id && (
+                  <div className="px-4 pb-4 animate-accordion-down overflow-hidden">
+                    <div className="flex items-center justify-center gap-2 mb-3 text-muted-foreground">
+                      <MousePointerClick className="w-4 h-4 animate-pulse" />
+                      <span className="text-sm">Click the player to start</span>
+                    </div>
+                    <iframe
+                      src={`https://open.spotify.com/embed/track/${track.spotifyId}?utm_source=generator&theme=0`}
+                      width="100%"
+                      height="152"
+                      frameBorder="0"
+                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                      loading="eager"
+                      className="rounded-xl"
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
