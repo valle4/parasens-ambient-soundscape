@@ -1211,6 +1211,46 @@ const tracks: Track[] = [
     subCategory: "Piano Cover",
     spotifyId: "2qJsAAXFRJDzBDPnGD1HgA",
   },
+  {
+    id: 145,
+    title: "Everybody Wants to Rule the World",
+    artist: "Dante Alessi",
+    genre: "Piano",
+    subCategory: "Piano Cover",
+    spotifyId: "7MqKp8wxNTV4Qos6s2diVh?si=b876c00d13464170",
+  },
+  {
+    id: 146,
+    title: "Slow Dancing in a Burning Room",
+    artist: "Walter Finn",
+    genre: "Piano",
+    subCategory: "Piano Cover",
+    spotifyId: "6goEUKJqmuMNq5Pv0YLmdZ?si=2e84c8a109974676",
+  },
+  {
+    id: 147,
+    title: "The Lady in Red",
+    artist: "Karl-Erik",
+    genre: "Piano",
+    subCategory: "Piano Cover",
+    spotifyId: "7qPoDnfzj2YTRmYvduCEfs?si=326144a1a13849c7",
+  },
+  {
+    id: 148,
+    title: "I Was Made for Lovin' You",
+    artist: "Cyrys Holloway",
+    genre: "Piano",
+    subCategory: "Piano Cover",
+    spotifyId: "6cSYfORSAwQJHlH1tcJRi1?si=5a554cf44f424751",
+  },
+  {
+    id: 149,
+    title: "Charlie Brown",
+    artist: "Walter Finn",
+    genre: "Piano",
+    subCategory: "Piano Cover",
+    spotifyId: "7KluGrB2TTDOD8fRac1jGy?si=0127f6d95e794a69",
+  },
 ];
 
 const MusicPlayer = () => {
