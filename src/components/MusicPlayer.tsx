@@ -496,7 +496,7 @@ const tracks: Track[] = [
     title: "It's Beginning to Look a Lot Like Christmas",
     artist: "Rob Tomas",
     genre: "Christmas",
-    subCategory: "Christmas Piano",
+    subCategory: "Piano & Fire",
     spotifyId: "1VPmQMIY3Yjtaz6Bnzwqxh",
   },
   {
