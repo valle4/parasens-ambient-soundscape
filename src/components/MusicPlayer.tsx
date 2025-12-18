@@ -1185,7 +1185,31 @@ const tracks: Track[] = [
     artist: "Cyrus Holloway",
     genre: "Piano",
     subCategory: "Piano Cover",
-    spotifyId: "24WsdMaqUh6cxUW4HAcPML?si=72e2e875dc6b4182",
+    spotifyId: "24WsdMaqUh6cxUW4HAcPML?si=72e2e875dc6b4182
+  },
+  {
+    id: 142,
+    title: "How to Save a Life",
+    artist: "Northern Dreams",
+    genre: "Piano",
+    subCategory: "Piano Cover",
+    spotifyId: "5vOoUZTg0E7tBwlX0ur4H3?si=f4636b1a015f4e17",
+  },
+  {
+    id: 143,
+    title: "undressed",
+    artist: "Olavi Heed",
+    genre: "Piano",
+    subCategory: "Piano Cover",
+    spotifyId: "2uFX1GSnsRjlA7w5lSm1rK?si=14792edbc79349d1",
+  },
+  {
+    id: 144,
+    title: "Goodbye Yellow Brick Road",
+    artist: "Moonsong",
+    genre: "Piano",
+    subCategory: "Piano Cover",
+    spotifyId: "2qJsAAXFRJDzBDPnGD1HgA",
   },
 ];
 
