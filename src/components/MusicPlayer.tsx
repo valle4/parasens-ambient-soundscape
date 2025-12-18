@@ -208,35 +208,36 @@ const MusicPlayer = () => {
         {/* Track List */}
         <div
           ref={tracksRef}
-          className={`space-y-1 mb-12 md:mb-16 scroll-reveal scroll-reveal-delay-2 ${tracksRevealed ? "revealed" : ""}`}
+          className={`max-h-[360px] overflow-y-auto mb-12 md:mb-16 scroll-reveal scroll-reveal-delay-2 ${tracksRevealed ? "revealed" : ""}`}
         >
-          {filteredTracks.map((track, index) => (
-            <div
-              key={track.id}
-              onClick={() => handleTrackSelect(track)}
-              className={`group flex items-center justify-between py-4 px-4 cursor-pointer transition-all duration-300 hover:bg-accent ${
-                currentTrack?.id === track.id ? "bg-accent" : ""
-              }`}
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="flex items-center gap-6">
-                <span className="text-muted-foreground text-sm w-6">
-                  {currentTrack?.id === track.id ? (
-                    <span className="inline-block w-2 h-2 bg-foreground rounded-full animate-pulse-slow" />
-                  ) : (
-                    String(index + 1).padStart(2, "0")
-                  )}
-                </span>
-                <div>
-                  <p className="font-medium">{track.title}</p>
-                  <p className="text-sm text-muted-foreground">{track.artist}</p>
+          <div className="space-y-1">
+            {filteredTracks.map((track, index) => (
+              <div
+                key={track.id}
+                onClick={() => handleTrackSelect(track)}
+                className={`group flex items-center justify-between py-4 px-4 cursor-pointer transition-all duration-300 hover:bg-accent ${
+                  currentTrack?.id === track.id ? "bg-accent" : ""
+                }`}
+              >
+                <div className="flex items-center gap-6">
+                  <span className="text-muted-foreground text-sm w-6">
+                    {currentTrack?.id === track.id ? (
+                      <span className="inline-block w-2 h-2 bg-foreground rounded-full animate-pulse-slow" />
+                    ) : (
+                      String(index + 1).padStart(2, "0")
+                    )}
+                  </span>
+                  <div>
+                    <p className="font-medium">{track.title}</p>
+                    <p className="text-sm text-muted-foreground">{track.artist}</p>
+                  </div>
                 </div>
+                <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                  {track.genre}
+                </span>
               </div>
-              <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                {track.genre}
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Spotify Embed Player */}
