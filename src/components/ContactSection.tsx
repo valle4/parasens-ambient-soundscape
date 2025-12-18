@@ -15,6 +15,7 @@ const ContactSection = () => {
   const [musicFormData, setMusicFormData] = useState({
     artistName: "",
     trackTitle: "",
+    genre: "",
     musicLink: "",
     email: "",
     description: "",
@@ -50,6 +51,7 @@ const ContactSection = () => {
       setMusicFormData({
         artistName: "",
         trackTitle: "",
+        genre: "",
         musicLink: "",
         email: "",
         description: "",
@@ -211,8 +213,7 @@ const ContactSection = () => {
                       name="artistName"
                       value={musicFormData.artistName}
                       onChange={handleMusicChange}
-                      placeholder="Artist Name"
-                      required
+                      placeholder="Artist Name (optional)"
                       className="input-minimal text-center"
                     />
                   </div>
@@ -222,7 +223,17 @@ const ContactSection = () => {
                       name="trackTitle"
                       value={musicFormData.trackTitle}
                       onChange={handleMusicChange}
-                      placeholder="Track Title"
+                      placeholder="Track Title (optional)"
+                      className="input-minimal text-center"
+                    />
+                  </div>
+                  <div className="w-full max-w-md">
+                    <input
+                      type="text"
+                      name="genre"
+                      value={musicFormData.genre}
+                      onChange={handleMusicChange}
+                      placeholder="Genre"
                       required
                       className="input-minimal text-center"
                     />
@@ -233,7 +244,7 @@ const ContactSection = () => {
                       name="musicLink"
                       value={musicFormData.musicLink}
                       onChange={handleMusicChange}
-                      placeholder="Spotify / SoundCloud Link"
+                      placeholder="Link (download or listening)"
                       required
                       className="input-minimal text-center"
                     />
