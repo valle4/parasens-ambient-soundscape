@@ -1364,10 +1364,37 @@ const MusicPlayer = () => {
         {/* Spacer when no sub-categories */}
         {availableSubCategories.length === 0 && <div className="mb-6 md:mb-10" />}
 
+        {/* Spotify Embed Player */}
+        <div
+          ref={playerRef}
+          className={`mb-8 scroll-reveal scroll-reveal-delay-2 ${playerRevealed ? "revealed" : ""}`}
+        >
+          {currentTrack && (
+            <div className="flex items-center justify-center gap-2 mb-4 text-muted-foreground animate-pulse">
+              <MousePointerClick className="w-4 h-4" />
+              <span className="text-sm">Click the player to start</span>
+            </div>
+          )}
+          {currentTrack ? (
+            <iframe
+              key={currentTrack.spotifyId}
+              src={`https://open.spotify.com/embed/track/${currentTrack.spotifyId}?utm_source=generator&theme=0`}
+              width="100%"
+              height="152"
+              frameBorder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="eager"
+              className="rounded-xl"
+            />
+          ) : (
+            <p className="text-muted-foreground text-center py-8">Select a track to play</p>
+          )}
+        </div>
+
         {/* Track List */}
         <div
           ref={tracksRef}
-          className={`max-h-[360px] overflow-y-auto mb-12 md:mb-16 scroll-reveal scroll-reveal-delay-2 ${tracksRevealed ? "revealed" : ""}`}
+          className={`max-h-[360px] overflow-y-auto border-t border-border pt-8 scroll-reveal scroll-reveal-delay-3 ${tracksRevealed ? "revealed" : ""}`}
         >
           <div className="space-y-1">
             {filteredTracks.map((track, index) => (
@@ -1400,33 +1427,6 @@ const MusicPlayer = () => {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Spotify Embed Player */}
-        <div
-          ref={playerRef}
-          className={`border-t border-border pt-8 scroll-reveal scroll-reveal-delay-3 ${playerRevealed ? "revealed" : ""}`}
-        >
-          {currentTrack && (
-            <div className="flex items-center justify-center gap-2 mb-4 text-muted-foreground animate-pulse">
-              <MousePointerClick className="w-4 h-4" />
-              <span className="text-sm">Click the player to start</span>
-            </div>
-          )}
-          {currentTrack ? (
-            <iframe
-              key={currentTrack.spotifyId}
-              src={`https://open.spotify.com/embed/track/${currentTrack.spotifyId}?utm_source=generator&theme=0`}
-              width="100%"
-              height="152"
-              frameBorder="0"
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="eager"
-              className="rounded-xl"
-            />
-          ) : (
-            <p className="text-muted-foreground text-center py-8">Select a track to play</p>
-          )}
         </div>
       </div>
     </section>
