@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Play } from "lucide-react";
+import { Play, MousePointerClick } from "lucide-react";
 import useScrollReveal from "@/hooks/useScrollReveal";
 
 interface Track {
@@ -1407,6 +1407,12 @@ const MusicPlayer = () => {
           ref={playerRef}
           className={`border-t border-border pt-8 scroll-reveal scroll-reveal-delay-3 ${playerRevealed ? "revealed" : ""}`}
         >
+          {currentTrack && (
+            <div className="flex items-center justify-center gap-2 mb-4 text-muted-foreground animate-pulse">
+              <MousePointerClick className="w-4 h-4" />
+              <span className="text-sm">Click the player to start</span>
+            </div>
+          )}
           {currentTrack ? (
             <iframe
               key={currentTrack.spotifyId}
