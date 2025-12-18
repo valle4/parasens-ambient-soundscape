@@ -1353,7 +1353,7 @@ const MusicPlayer = () => {
                 {/* Track Row */}
                 <div
                   onClick={() => handleTrackSelect(track)}
-                  className={`group flex items-center justify-between py-4 px-4 cursor-pointer transition-all duration-300 hover:bg-accent ${
+                  className={`track-row group flex items-center justify-between py-4 px-4 cursor-pointer transition-all duration-300 hover:bg-accent hover:translate-x-1 ${
                     expandedTrackId === track.id ? "bg-accent" : ""
                   }`}
                 >

@@ -17,17 +17,19 @@ const HeroSection = () => {
         <div className="mt-16 md:mt-24 opacity-0 animate-fade-in animation-delay-1000">
           <a
             href="#music"
-            className="inline-flex items-center gap-3 text-sm tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 group"
+            className="explore-button inline-flex items-center gap-3 text-sm tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground transition-all duration-500 group relative"
           >
-            <span>Explore</span>
+            <span className="relative z-10">Explore</span>
             <svg
-              className="w-4 h-4 transform group-hover:translate-y-1 transition-transform duration-500"
+              className="w-4 h-4 transform group-hover:translate-y-1 transition-transform duration-500 relative z-10"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
+            {/* Hover glow */}
+            <span className="absolute inset-0 -m-2 rounded-full bg-foreground/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
           </a>
         </div>
       </div>

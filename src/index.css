@@ -400,3 +400,95 @@
     transform: translate(1%, 1%) scale(1) rotate(0deg);
   }
 }
+
+/* Custom Cursor Styles */
+@media (hover: hover) and (pointer: fine) {
+  * {
+    cursor: none !important;
+  }
+}
+
+.custom-cursor-dot {
+  position: fixed;
+  width: 6px;
+  height: 6px;
+  background: hsl(var(--foreground));
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.15s ease-out, width 0.2s ease, height 0.2s ease, opacity 0.3s ease;
+  mix-blend-mode: difference;
+}
+
+.custom-cursor-dot.hovering {
+  transform: translate(-50%, -50%) scale(0.5);
+  opacity: 0.5;
+}
+
+.custom-cursor-dot.clicking {
+  transform: translate(-50%, -50%) scale(0.3);
+}
+
+.custom-cursor-ring {
+  position: fixed;
+  width: 36px;
+  height: 36px;
+  border: 1px solid hsl(var(--foreground) / 0.4);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: transform 0.3s cubic-bezier(0.33, 1, 0.68, 1), 
+              width 0.3s ease, 
+              height 0.3s ease, 
+              border-color 0.3s ease,
+              opacity 0.3s ease;
+}
+
+.custom-cursor-ring.hovering {
+  width: 60px;
+  height: 60px;
+  border-color: hsl(var(--foreground) / 0.6);
+}
+
+.custom-cursor-ring.clicking {
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+/* Button hover enhancements */
+.button-minimal {
+  position: relative;
+  overflow: hidden;
+}
+
+.button-minimal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), hsl(var(--foreground) / 0.1), transparent 50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.button-minimal:hover::before {
+  opacity: 1;
+}
+
+/* Track row hover glow */
+.track-row {
+  position: relative;
+}
+
+.track-row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, hsl(var(--accent) / 0.3) 50%, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.track-row:hover::before {
+  opacity: 1;
+}
