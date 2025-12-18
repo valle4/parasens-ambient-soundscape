@@ -35,8 +35,6 @@ const subCategories: Record<string, string[]> = {
   Lullabies: ["Piano", "Music Box", "Christian", "Pop Lullabies"],
   Christmas: ["Jazzy Christmas", "Christmas Piano", "Piano & Fire", "Christmas Guitar"],
   Ambient: ["Sleep", "Relaxing Pan Flute", "Ambient Nature", "Harp", "Experimental"],
-  LoFi: ["Chill", "Study", "Night"],
-  Phonk: ["Hard", "Drift", "Sped Up"],
 };
 
 // ============================================
