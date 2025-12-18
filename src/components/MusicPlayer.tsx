@@ -34,7 +34,7 @@ const subCategories: Record<string, string[]> = {
   Classical: ["Piano", "Cello"],
   Lullabies: ["Piano", "Music Box", "Christian", "Pop Lullabies"],
   Christmas: ["Jazzy Christmas", "Christmas Piano", "Piano & Fire", "Christmas Guitar"],
-  Ambient: ["Sleep", "Dark", "Nature"],
+  Ambient: ["Sleep", "Relaxing Pan Flute", "Ambient Nature", "Harp", "Experimental"],
   LoFi: ["Chill", "Study", "Night"],
   Phonk: ["Hard", "Drift", "Sped Up"],
 };
@@ -846,7 +846,7 @@ const tracks: Track[] = [
     title: "Somnora",
     artist: "ẹmi",
     genre: "Ambient",
-    subCategory: "Ethereal",
+    subCategory: "Sleep",
     spotifyId: "5wiNVXnW8DSSAZqAeJhZyp",
   },
   {
@@ -854,7 +854,7 @@ const tracks: Track[] = [
     title: "Fae",
     artist: "ẹmi",
     genre: "Ambient",
-    subCategory: "Ethereal",
+    subCategory: "Sleep",
     spotifyId: "7LbtHaHtW5gR53Vhlu6apv",
   },
   {
@@ -862,7 +862,7 @@ const tracks: Track[] = [
     title: "daystar",
     artist: "ṣolạnạ",
     genre: "Ambient",
-    subCategory: "Ethereal",
+    subCategory: "Relaxing Pan Flute",
     spotifyId: "0mYrLCdXrwXHg75vQIJEzP",
   },
   {
@@ -870,7 +870,7 @@ const tracks: Track[] = [
     title: "solandria",
     artist: "ṣolạnạ",
     genre: "Ambient",
-    subCategory: "Ethereal",
+    subCategory: "Ambient Nature",
     spotifyId: "2a36WEbtTrbJSeLr0Cq4ez",
   },
   {
@@ -878,7 +878,7 @@ const tracks: Track[] = [
     title: "Perceive",
     artist: "Veloura",
     genre: "Ambient",
-    subCategory: "Ethereal",
+    subCategory: "Harp",
     spotifyId: "5vIDogf5gW9Vma5TboRLrl",
   },
   // Ambient - Dark
@@ -886,8 +886,8 @@ const tracks: Track[] = [
     id: 100,
     title: "The Dark Cloud",
     artist: "beau",
-    genre: "Ambient",
-    subCategory: "Dark",
+    genre: "Piano",
+    subCategory: "Piano & Nature",
     spotifyId: "6l1GY6kudCtkfbZCYkdyNp",
   },
   {
@@ -895,7 +895,7 @@ const tracks: Track[] = [
     title: "Noctilucent Clouds",
     artist: "SKEN",
     genre: "Ambient",
-    subCategory: "Dark",
+    subCategory: "Sleep",
     spotifyId: "2Fcun7FZ4vH3kBPbdtw6uZ",
   },
   {
@@ -903,7 +903,7 @@ const tracks: Track[] = [
     title: "Astray",
     artist: "SKEN",
     genre: "Ambient",
-    subCategory: "Dark",
+    subCategory: "Sleep",
     spotifyId: "1YDn3bachGQc2hZATanMH9",
   },
   {
@@ -911,7 +911,7 @@ const tracks: Track[] = [
     title: "andesine",
     artist: "ìmí",
     genre: "Ambient",
-    subCategory: "Dark",
+    subCategory: "Ambient Nature",
     spotifyId: "4Jnp2IzOPnub6zldNFebDb",
   },
   {
@@ -919,7 +919,7 @@ const tracks: Track[] = [
     title: "oblivisci",
     artist: "ìmí",
     genre: "Ambient",
-    subCategory: "Dark",
+    subCategory: "Sleep",
     spotifyId: "1JpU0Gzyq0TwLvT6J6xlBi",
   },
   {
@@ -927,7 +927,7 @@ const tracks: Track[] = [
     title: "when it all began",
     artist: "Manne Skafvenstedt",
     genre: "Ambient",
-    subCategory: "Dark",
+    subCategory: "Experimental",
     spotifyId: "28qwN7VZ6HsLBFLrcjgZ55",
   },
   {
@@ -935,7 +935,7 @@ const tracks: Track[] = [
     title: "a glimpse",
     artist: "Manne Skafvenstedt",
     genre: "Ambient",
-    subCategory: "Dark",
+    subCategory: "Experimental",
     spotifyId: "1e86VCeYPLoAOQkRCekM6P",
   },
   {
@@ -943,7 +943,7 @@ const tracks: Track[] = [
     title: "memories",
     artist: "Manne Skafvenstedt",
     genre: "Ambient",
-    subCategory: "Dark",
+    subCategory: "Experimental",
     spotifyId: "5yC861NtYR3FbsW68RaNoG",
   },
   {
@@ -951,7 +951,7 @@ const tracks: Track[] = [
     title: "from afar",
     artist: "Manne Skafvenstedt",
     genre: "Ambient",
-    subCategory: "Dark",
+    subCategory: "Experimental",
     spotifyId: "4TwC3J4YK2dsvLOn2FP9bu",
   },
   {
@@ -959,7 +959,7 @@ const tracks: Track[] = [
     title: "reborn",
     artist: "Manne Skafvenstedt",
     genre: "Ambient",
-    subCategory: "Dark",
+    subCategory: "Experimental",
     spotifyId: "0EvTlvwxOZqgw1EjzoaUIL",
   },
   {
@@ -967,7 +967,7 @@ const tracks: Track[] = [
     title: "as dark light",
     artist: "Manne Skafvenstedt",
     genre: "Ambient",
-    subCategory: "Dark",
+    subCategory: "Experimental",
     spotifyId: "0EsBHib2hr52KHnvWlyLkh",
   },
   {
@@ -975,7 +975,7 @@ const tracks: Track[] = [
     title: "i will dissolve",
     artist: "Manne Skafvenstedt",
     genre: "Ambient",
-    subCategory: "Dark",
+    subCategory: "Experimental",
     spotifyId: "6mljVwXsdsYHUZCIF10Cfe",
   },
   {
@@ -983,7 +983,7 @@ const tracks: Track[] = [
     title: "bellum",
     artist: "Manne Skafvenstedt",
     genre: "Ambient",
-    subCategory: "Dark",
+    subCategory: "Experimental",
     spotifyId: "4LHkLQP3Y9bycpFfG5v8Il",
   },
   {
@@ -991,7 +991,7 @@ const tracks: Track[] = [
     title: "inebrantia",
     artist: "Manne Skafvenstedt",
     genre: "Ambient",
-    subCategory: "Dark",
+    subCategory: "Experimental",
     spotifyId: "1LUVPqG1WyeK0fsihIV4lm",
   },
   // Ambient - Nature
@@ -999,40 +999,40 @@ const tracks: Track[] = [
     id: 97,
     title: "oceana",
     artist: "beau",
-    genre: "Ambient",
-    subCategory: "Nature",
+    genre: "Piano",
+    subCategory: "Piano & Nature",
     spotifyId: "28D9je9qOTnskQhseqEpza",
   },
   {
     id: 98,
     title: "willow tree",
     artist: "āya",
-    genre: "Ambient",
-    subCategory: "Nature",
+    genre: "Piano",
+    subCategory: "Piano & Nature",
     spotifyId: "6XGeHLUoa4rhBG5SYzEs7u",
   },
   {
     id: 102,
     title: "A lover of rain",
     artist: "ispirà",
-    genre: "Ambient",
-    subCategory: "Nature",
+    genre: "Piano",
+    subCategory: "Piano & Nature",
     spotifyId: "0t8MQl6lV7fivPHmVnTKZv",
   },
   {
     id: 104,
     title: "Daybreak",
     artist: "beau",
-    genre: "Ambient",
-    subCategory: "Nature",
+    genre: "Piano",
+    subCategory: "Piano & Nature",
     spotifyId: "4woeyzEkJsJ1gez65M5gLg",
   },
   {
     id: 105,
     title: "Cloudburst",
     artist: "āya",
-    genre: "Ambient",
-    subCategory: "Nature",
+    genre: "Piano",
+    subCategory: "Piano & Nature",
     spotifyId: "6h9As9ievPbtl28LIyXxat",
   },
   {
@@ -1040,7 +1040,7 @@ const tracks: Track[] = [
     title: "Estimate",
     artist: "ispíritu",
     genre: "Ambient",
-    subCategory: "Nature",
+    subCategory: "Sleep",
     spotifyId: "7lm8gkHUvNKXmVX857S2KU",
   },
   {
@@ -1048,7 +1048,7 @@ const tracks: Track[] = [
     title: "Doranel",
     artist: "ispíritu",
     genre: "Ambient",
-    subCategory: "Nature",
+    subCategory: "Sleep",
     spotifyId: "4oh4PhqhD5RXqDytBqyviM",
   },
 
@@ -1058,7 +1058,7 @@ const tracks: Track[] = [
     title: "nightvibez",
     artist: "léas solais",
     genre: "LoFi",
-    subCategory: "Chill",
+    subCategory: "",
     spotifyId: "1SLlIviQNwOqyJ5pPMZ0pn",
   },
   {
@@ -1074,7 +1074,6 @@ const tracks: Track[] = [
     title: "vintara",
     artist: "léas solais",
     genre: "LoFi",
-    subCategory: "Chill",
     spotifyId: "6iDN4e3RQQBXi4vn7k3V2M",
   },
   // LoFi - Study
@@ -1083,7 +1082,6 @@ const tracks: Track[] = [
     title: "unwind rewind",
     artist: "Mambojambo",
     genre: "LoFi",
-    subCategory: "Study",
     spotifyId: "2het2Gw9kQZKOZl2ATnog3",
   },
   {
@@ -1091,7 +1089,6 @@ const tracks: Track[] = [
     title: "Reboot",
     artist: "Mambojambo",
     genre: "LoFi",
-    subCategory: "Study",
     spotifyId: "74ShLjHTOr2HEnFwSBPQZ2",
   },
   {
@@ -1099,7 +1096,6 @@ const tracks: Track[] = [
     title: "food for thought",
     artist: "Mambojambo",
     genre: "LoFi",
-    subCategory: "Study",
     spotifyId: "503sUNMLxKorWDZDS823ft",
   },
   // LoFi - Night
@@ -1108,7 +1104,6 @@ const tracks: Track[] = [
     title: "memory",
     artist: "Nebu",
     genre: "LoFi",
-    subCategory: "Night",
     spotifyId: "4gMy8CXhwcaC9ThiZR1eHo",
   },
   {
@@ -1116,7 +1111,6 @@ const tracks: Track[] = [
     title: "embrace",
     artist: "Nebu",
     genre: "LoFi",
-    subCategory: "Night",
     spotifyId: "7h3JilWZMYkOkc5y8OnBvn",
   },
   {
@@ -1124,7 +1118,6 @@ const tracks: Track[] = [
     title: "sonodex",
     artist: "léas solais",
     genre: "LoFi",
-    subCategory: "Night",
     spotifyId: "3q78jRuBitgRPextx7lIIU",
   },
 
@@ -1134,7 +1127,6 @@ const tracks: Track[] = [
     title: "UUM PA UUM PA - SPED UP",
     artist: "M3TAMORPH",
     genre: "Phonk",
-    subCategory: "Sped Up",
     spotifyId: "3PyEMQhlWbqn47fG24lS3D",
   },
   {
@@ -1142,7 +1134,6 @@ const tracks: Track[] = [
     title: "PULSO - SPED UP",
     artist: "M3TAMORPH",
     genre: "Phonk",
-    subCategory: "Sped Up",
     spotifyId: "7BLCqCZFd9MsXhMP1lOxrp",
   },
   {
@@ -1150,7 +1141,6 @@ const tracks: Track[] = [
     title: "Big Back Blesser - SPED UP",
     artist: "M3TAMORPH",
     genre: "Phonk",
-    subCategory: "Sped Up",
     spotifyId: "6pA6oCnQtazmXXt9Ek53Vr",
   },
   // Phonk - Hard
@@ -1159,7 +1149,6 @@ const tracks: Track[] = [
     title: "Malditas",
     artist: "M3TAMORPH",
     genre: "Phonk",
-    subCategory: "Hard",
     spotifyId: "7igJ8aFOXsSBxY8kSVlihW",
   },
   {
@@ -1167,7 +1156,6 @@ const tracks: Track[] = [
     title: "Avada Kedavra",
     artist: "M3TAMORPH",
     genre: "Phonk",
-    subCategory: "Hard",
     spotifyId: "0rkZSeUtcXliWF1bZjXPPD",
   },
   // Phonk - Drift
@@ -1176,7 +1164,6 @@ const tracks: Track[] = [
     title: "FINNA FINNA FINNA",
     artist: "DJ BINKS",
     genre: "Phonk",
-    subCategory: "Drift",
     spotifyId: "6Eykhf6fdAmOLjkSy9d5i2",
   },
 ];
