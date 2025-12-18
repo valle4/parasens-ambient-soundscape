@@ -35,6 +35,8 @@ const subCategories: Record<string, string[]> = {
   Lullabies: ["Piano", "Music Box", "Christian", "Pop Lullabies"],
   Christmas: ["Jazzy Christmas", "Christmas Piano", "Piano & Fire", "Christmas Guitar"],
   Ambient: ["Sleep", "Relaxing Pan Flute", "Ambient Nature", "Harp", "Experimental"],
+  LoFi: ["Chill", "Study", "Night"],
+  Phonk: ["Hard", "Drift", "Sped Up"],
 };
 
 // ============================================
@@ -1176,6 +1178,14 @@ const tracks: Track[] = [
     genre: "Phonk",
     subCategory: "Drift",
     spotifyId: "6Eykhf6fdAmOLjkSy9d5i2",
+  },
+  {
+    id: 141,
+    title: "Under The Bridge",
+    artist: "Cyrus Holloway",
+    genre: "Piano",
+    subCategory: "Piano Cover",
+    spotifyId: "24WsdMaqUh6cxUW4HAcPML?si=72e2e875dc6b4182",
   },
 ];
 
