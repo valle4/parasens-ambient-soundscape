@@ -265,7 +265,7 @@ const ContactSection = () => {
                       name="description"
                       value={musicFormData.description}
                       onChange={handleMusicChange}
-                      placeholder="Brief description (optional)"
+                      placeholder="Brief description"
                       rows={3}
                       className="input-minimal resize-none text-center"
                     />
