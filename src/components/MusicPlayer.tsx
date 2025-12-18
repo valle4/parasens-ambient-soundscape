@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Play } from "lucide-react";
 import useScrollReveal from "@/hooks/useScrollReveal";
 
 interface Track {
@@ -1273,6 +1274,13 @@ const MusicPlayer = () => {
     return true;
   });
 
+  // Auto-play first track when genre changes
+  useEffect(() => {
+    if (filteredTracks.length > 0) {
+      setCurrentTrack(filteredTracks[0]);
+    }
+  }, [selectedGenre, selectedSubCategory]);
+
   const handleGenreSelect = (genre: string) => {
     setSelectedGenre(genre);
     setSelectedSubCategory(null); // Reset sub-category when genre changes
@@ -1353,11 +1361,14 @@ const MusicPlayer = () => {
                 }`}
               >
                 <div className="flex items-center gap-6">
-                  <span className="text-muted-foreground text-sm w-6">
+                  <span className="text-muted-foreground text-sm w-6 flex items-center justify-center">
                     {currentTrack?.id === track.id ? (
                       <span className="inline-block w-2 h-2 bg-foreground rounded-full animate-pulse-slow" />
                     ) : (
-                      String(index + 1).padStart(2, "0")
+                      <span className="group-hover:hidden">{String(index + 1).padStart(2, "0")}</span>
+                    )}
+                    {currentTrack?.id !== track.id && (
+                      <Play className="w-4 h-4 hidden group-hover:block fill-current" />
                     )}
                   </span>
                   <div>
