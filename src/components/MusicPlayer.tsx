@@ -34,7 +34,7 @@ const subCategories: Record<string, string[]> = {
   "Acoustic Cover": ["Vocal Cover", "Guitar Cover"],
   Classical: ["Modern", "Traditional", "Cinematic"],
   Lullabies: ["Gentle", "Dreamy", "Playful", "Pop Lullabies"],
-  Christmas: ["Traditional", "Cozy", "Festive"],
+  Christmas: ["Jazzy Christmas", "Christmas Piano", "Piano & Fire", "Christmas Guitar"],
   Christian: ["Hymns", "Worship", "Peaceful"],
   Ambient: ["Ethereal", "Dark", "Nature"],
   LoFi: ["Chill", "Study", "Night"],
@@ -233,16 +233,16 @@ const tracks: Track[] = [
     id: 79,
     title: "Birds of a Feather",
     artist: "The Happy Cat",
-    genre: "Acoustic Cover",
-    subCategory: "Ballads",
+    genre: "Lullabies",
+    subCategory: "Pop Lullabies",
     spotifyId: "6xH9KARVKHPKlYYXpYDVni",
   },
   {
     id: 80,
     title: "Beautiful Things",
     artist: "Wonder Wave",
-    genre: "Acoustic Cover",
-    subCategory: "Ballads",
+    genre: "Lullabies",
+    subCategory: "Pop Lullabies",
     spotifyId: "4Uv8fcqdKavS1tcH5rIXKg",
   },
 
@@ -252,7 +252,7 @@ const tracks: Track[] = [
     title: "Blue Haze",
     artist: "Ray Love Trio",
     genre: "Jazz",
-    subCategory: "Smooth",
+    subCategory: "Jazz Trio",
     spotifyId: "1s1l7ksPaqruuvc4LdCH6f",
   },
   {
@@ -260,7 +260,7 @@ const tracks: Track[] = [
     title: "Evening Sun",
     artist: "Alec Taylor Trio",
     genre: "Jazz",
-    subCategory: "Smooth",
+    subCategory: "Jazz Trio",
     spotifyId: "5Kwzs76HmFATFfdAHEN1tw",
   },
   {
@@ -268,7 +268,7 @@ const tracks: Track[] = [
     title: "The Quiet Storm",
     artist: "Andy Luma Trio",
     genre: "Jazz",
-    subCategory: "Smooth",
+    subCategory: "Jazz Trio",
     spotifyId: "5caSbCpxmMVfAdq6wt37nF",
   },
   {
@@ -276,7 +276,7 @@ const tracks: Track[] = [
     title: "Midnight Drift",
     artist: "Urskogen Jazz",
     genre: "Jazz",
-    subCategory: "Smooth",
+    subCategory: "Jazz Trio",
     spotifyId: "6UjkXOZj0kZB3XTJrGxoIS",
   },
   // Jazz - Classic
@@ -285,7 +285,7 @@ const tracks: Track[] = [
     title: "The Things We Did Last Summer",
     artist: "Einar Magnusson",
     genre: "Jazz",
-    subCategory: "Classic",
+    subCategory: "Solo Piano",
     spotifyId: "2kZE2oq2A6IdoXFxNEVQwV",
   },
   {
@@ -293,7 +293,7 @@ const tracks: Track[] = [
     title: "A Wayfarer's Tale",
     artist: "Ray Love Trio",
     genre: "Jazz",
-    subCategory: "Classic",
+    subCategory: "Jazz Trio",
     spotifyId: "0RrvMxwdAX6qBQHjR3EEPZ",
   },
   {
@@ -301,7 +301,7 @@ const tracks: Track[] = [
     title: "This Time Tomorrow",
     artist: "Helmut Cole Trio",
     genre: "Jazz",
-    subCategory: "Classic",
+    subCategory: "Jazz Trio",
     spotifyId: "7s8J2SLXguqAT8RqoqSXoh",
   },
   {
@@ -309,7 +309,7 @@ const tracks: Track[] = [
     title: "Flamingo",
     artist: "Ray Love",
     genre: "Jazz",
-    subCategory: "Classic",
+    subCategory: "Solo Piano",
     spotifyId: "5hUBEW72nvmwnibrFUFemr",
   },
   {
@@ -317,7 +317,7 @@ const tracks: Track[] = [
     title: "For Sentimental Reasons",
     artist: "Ray Love Trio",
     genre: "Jazz",
-    subCategory: "Classic",
+    subCategory: "Jazz Trio",
     spotifyId: "16XLUnjRsRJ2ZAUTsxCH1D",
   },
   {
@@ -325,7 +325,7 @@ const tracks: Track[] = [
     title: "Spring Green",
     artist: "Einar Magnusson",
     genre: "Jazz",
-    subCategory: "Classic",
+    subCategory: "Jazz Trio",
     spotifyId: "0Yn1xmq6NE9XWeUBnPGyb6",
   },
   // Jazz - Bossa Nova
