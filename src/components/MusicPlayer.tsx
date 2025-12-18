@@ -34,7 +34,7 @@ const subCategories: Record<string, string[]> = {
   Classical: ["Piano", "Cello"],
   Lullabies: ["Piano", "Music Box", "Christian", "Pop Lullabies"],
   Christmas: ["Jazzy Christmas", "Christmas Piano", "Piano & Fire", "Christmas Guitar"],
-  Ambient: ["Ethereal", "Dark", "Nature"],
+  Ambient: ["Sleep", "Dark", "Nature"],
   LoFi: ["Chill", "Study", "Night"],
   Phonk: ["Hard", "Drift", "Sped Up"],
 };
