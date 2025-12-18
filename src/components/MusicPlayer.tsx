@@ -683,7 +683,6 @@ const tracks: Track[] = [
     subCategory: "Piano",
     spotifyId: "2QhKyPInwRf0gqjWiu4VVm",
   },
-  },
 
   // Christian - Hymns
   {
