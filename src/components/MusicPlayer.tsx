@@ -16,7 +16,6 @@ const genres = [
   "Jazz",
   "Acoustic Cover",
   "Classical",
-  "Guitar"
   "Lullabies",
   "Christmas",
   "Christian",
@@ -53,7 +52,7 @@ const tracks: Track[] = [
     title: "Ponceau",
     artist: "Ray Love",
     genre: "Piano",
-    subCategory: "Peaceful Piano",
+    subCategory: "Soft",
     spotifyId: "1qCrvHUu3jt5oSpvYaVrwH",
   },
   {
@@ -61,7 +60,7 @@ const tracks: Track[] = [
     title: "estiu",
     artist: "Valentine Summers",
     genre: "Piano",
-    subCategory: "Peaceful Piano",
+    subCategory: "Soft",
     spotifyId: "1vzwRWE2Vj7JZwqBqi9ivM",
   },
   {
@@ -69,7 +68,7 @@ const tracks: Track[] = [
     title: "Juliet Rose",
     artist: "A Little Time",
     genre: "Piano",
-    subCategory: "Peaceful Piano",
+    subCategory: "Soft",
     spotifyId: "5eiXYdSRFd48jBqnQrw83h",
   },
   {
@@ -77,7 +76,7 @@ const tracks: Track[] = [
     title: "Echidna",
     artist: "Northern Dreams",
     genre: "Piano",
-    subCategory: "Peaceful Piano",
+    subCategory: "Soft",
     spotifyId: "66IOe8PcQPacJ3D3MtGLMS",
   },
   { id: 5, title: "sēnse", artist: "ispirà", genre: "Piano", subCategory: "Soft", spotifyId: "7xAEN2uqrL8MGnpuyAbrmd" },
@@ -87,7 +86,7 @@ const tracks: Track[] = [
     title: "From a Distance",
     artist: "Mindy Thurma",
     genre: "Piano",
-    subCategory: "Peaceful Piano",
+    subCategory: "Emotional",
     spotifyId: "7DSAwNkmall9lAltVsoWFw",
   },
   {
@@ -95,7 +94,7 @@ const tracks: Track[] = [
     title: "The Years Grew Quiet",
     artist: "Giorgio Rossi",
     genre: "Piano",
-    subCategory: "Peaceful Piano",
+    subCategory: "Emotional",
     spotifyId: "5TjMmdE5zIWUrFhBqL9Lge",
   },
   {
@@ -103,7 +102,7 @@ const tracks: Track[] = [
     title: "Ember",
     artist: "Lunar Lull",
     genre: "Piano",
-    subCategory: "Peaceful Piano",
+    subCategory: "Emotional",
     spotifyId: "7yZcjQGSDcKdxAmxJ7rvqd",
   },
   {
@@ -111,7 +110,7 @@ const tracks: Track[] = [
     title: "Jade Vine",
     artist: "Moonsong",
     genre: "Piano",
-    subCategory: "Peaceful Piano",
+    subCategory: "Emotional",
     spotifyId: "6rr10DYH1fRl2r1JATikzT",
   },
   {
@@ -119,7 +118,7 @@ const tracks: Track[] = [
     title: "Between Heartbeats",
     artist: "Cassian Lake",
     genre: "Piano",
-    subCategory: "Peaceful Piano",
+    subCategory: "Emotional",
     spotifyId: "4WxEAxB8e317cYBRwz9NaO",
   },
   // Piano - Uplifting
