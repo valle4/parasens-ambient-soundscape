@@ -40,7 +40,7 @@ const AboutSection = () => {
           {lines.map((line, index) => (
             <p
               key={index}
-              className={`text-base md:text-lg lg:text-xl leading-relaxed font-light text-muted-foreground/80 transition-all duration-700 ${
+              className={`text-base md:text-lg lg:text-xl leading-relaxed font-light text-foreground/70 transition-all duration-700 ${
                 visibleLines.includes(index) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
               }`}
               style={{ transitionDelay: `${index * 50}ms` }}
