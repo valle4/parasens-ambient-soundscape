@@ -33,7 +33,7 @@ const subCategories: Record<string, string[]> = {
   Jazz: ["Jazz Trio", "Solo Piano", "Bossa Nova"],
   "Acoustic Cover": ["Vocal Cover", "Guitar Cover"],
   Classical: ["Modern", "Traditional", "Cinematic"],
-  Lullabies: ["Gentle", "Dreamy", "Playful"],
+  Lullabies: ["Gentle", "Dreamy", "Playful", "Pop Lullabies"],
   Christmas: ["Traditional", "Cozy", "Festive"],
   Christian: ["Hymns", "Worship", "Peaceful"],
   Ambient: ["Ethereal", "Dark", "Nature"],
@@ -192,7 +192,7 @@ const tracks: Track[] = [
     title: "Man I Need",
     artist: "Esther & John",
     genre: "Acoustic Cover",
-    subCategory: "Pop Hits",
+    subCategory: "Vocal Cover",
     spotifyId: "6UuKo0mzNdThLwt1DlobiP",
   },
   {
@@ -200,7 +200,7 @@ const tracks: Track[] = [
     title: "feelslikeimfallinginlove",
     artist: "Esther & John",
     genre: "Acoustic Cover",
-    subCategory: "Pop Hits",
+    subCategory: "Vocal Cover",
     spotifyId: "2x60ePnBzW1db4JOyxBW6u",
   },
   // Acoustic Cover - Duets
@@ -209,7 +209,7 @@ const tracks: Track[] = [
     title: "Birds of a Feather",
     artist: "Gustav & Julia",
     genre: "Acoustic Cover",
-    subCategory: "Duets",
+    subCategory: "Vocal Cover",
     spotifyId: "6Mcwnd9E7rhABPZUPZpxCX",
   },
   {
@@ -217,7 +217,7 @@ const tracks: Track[] = [
     title: "Kiss - Acoustic Version",
     artist: "Gustav & Julia",
     genre: "Acoustic Cover",
-    subCategory: "Duets",
+    subCategory: "Vocal Cover",
     spotifyId: "0J9liajekfS7m5egdYmmbD",
   },
   // Acoustic Cover - Ballads
@@ -225,8 +225,8 @@ const tracks: Track[] = [
     id: 78,
     title: "Man I Need",
     artist: "Irving O'Neill",
-    genre: "Acoustic Cover",
-    subCategory: "Ballads",
+    genre: "Lullabies",
+    subCategory: "Pop Lullabies",
     spotifyId: "37CfzvKVcteIFeNXfocxvG",
   },
   {
