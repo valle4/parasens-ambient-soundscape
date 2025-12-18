@@ -17,11 +17,26 @@ const genres = [
   "Jazz",
   "Lullabies",
   "Focus",
+  "Piano",
+  "Guitar",
+  "Acoustic Cover",
+  "Jazz",
+  "Bossa Nova",
+  "Christmas",
+  "Classical",
+  "Lullabies",
+  "Christian",
+  "Rain & Nature",
+  "Ambient",
+  "Experimental",
+  "LoFi",
+  "Synthwave",
+  "Phonk",
 ];
 
 // Helper to extract Spotify track ID from URL or return as-is if already an ID
 const extractSpotifyId = (input: string): string => {
-  if (input.includes('spotify.com/track/')) {
+  if (input.includes("spotify.com/track/")) {
     const match = input.match(/track\/([a-zA-Z0-9]+)/);
     return match ? match[1] : input;
   }
@@ -30,7 +45,13 @@ const extractSpotifyId = (input: string): string => {
 
 // Add your Spotify track IDs or full URLs here
 const tracks: Track[] = [
-  { id: 1, title: "haven", artist: "isima", genre: "Piano", spotifyId: "https://open.spotify.com/track/2jWn1bjTTyg1u19CUnMIwC?si=94f0549fa9ed4800" },
+  {
+    id: 1,
+    title: "haven",
+    artist: "isima",
+    genre: "Piano",
+    spotifyId: "https://open.spotify.com/track/2jWn1bjTTyg1u19CUnMIwC?si=94f0549fa9ed4800",
+  },
   { id: 2, title: "Rainfall", artist: "PARASENS", genre: "Sleep", spotifyId: "3n3Ppam7vgaVa1iaRUc9Lp" },
   { id: 3, title: "Nocturne in Grey", artist: "PARASENS", genre: "Piano", spotifyId: "1HNkqx9Ahdgi1Ixy2xkKkL" },
   { id: 4, title: "Late Hours", artist: "PARASENS", genre: "Jazz", spotifyId: "6rqhFgbbKwnb9MLmUQDhG6" },
@@ -49,31 +70,18 @@ const MusicPlayer = () => {
   const { ref: tracksRef, isRevealed: tracksRevealed } = useScrollReveal();
   const { ref: playerRef, isRevealed: playerRevealed } = useScrollReveal();
 
-  const filteredTracks =
-    selectedGenre === "All"
-      ? tracks
-      : tracks.filter((track) => track.genre === selectedGenre);
+  const filteredTracks = selectedGenre === "All" ? tracks : tracks.filter((track) => track.genre === selectedGenre);
 
   const handleTrackSelect = (track: Track) => {
     setCurrentTrack(track);
   };
 
   return (
-    <section
-      id="music"
-      className="min-h-screen section-padding bg-card"
-    >
+    <section id="music" className="min-h-screen section-padding bg-card">
       <div className="max-w-5xl mx-auto">
-        <div
-          ref={headerRef}
-          className={`scroll-reveal text-center ${headerRevealed ? "revealed" : ""}`}
-        >
-          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-4">
-            Listen
-          </h2>
-          <p className="text-muted-foreground text-lg mb-12 md:mb-16">
-            Select a mood. Press play.
-          </p>
+        <div ref={headerRef} className={`scroll-reveal text-center ${headerRevealed ? "revealed" : ""}`}>
+          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-4">Listen</h2>
+          <p className="text-muted-foreground text-lg mb-12 md:mb-16">Select a mood. Press play.</p>
         </div>
 
         {/* Genre Selector */}
@@ -85,11 +93,7 @@ const MusicPlayer = () => {
             <button
               key={genre}
               onClick={() => setSelectedGenre(genre)}
-              className={`genre-button ${
-                selectedGenre === genre
-                  ? "genre-button-active"
-                  : "genre-button-inactive"
-              }`}
+              className={`genre-button ${selectedGenre === genre ? "genre-button-active" : "genre-button-inactive"}`}
             >
               {genre}
             </button>
