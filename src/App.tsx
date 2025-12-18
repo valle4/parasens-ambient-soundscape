@@ -5,12 +5,20 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import CustomCursor from "./components/CustomCursor";
+import MouseSpotlight from "./components/MouseSpotlight";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      {/* Custom cursor */}
+      <CustomCursor />
+      
+      {/* Mouse spotlight effect */}
+      <MouseSpotlight />
+      
       {/* Immersive background layers */}
       <div className="bg-orb-layer" />
       <div className="vignette" />

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import MagneticLink from "./MagneticLink";
 
 const navItems = [
   { label: "Music", href: "#music" },
@@ -44,24 +45,26 @@ const Navigation = () => {
       }`}
     >
       <div className="flex items-center justify-between px-6 md:px-12 lg:px-24 py-6">
-        <a
+        <MagneticLink
           href="#"
           className="font-display text-lg tracking-[0.15em] font-semibold hover:opacity-70 transition-opacity duration-500"
+          strength={0.2}
         >
           PARASENS
-        </a>
+        </MagneticLink>
 
         <div className="flex items-center gap-8 md:gap-12">
           {navItems.map((item) => (
-            <a
+            <MagneticLink
               key={item.href}
               href={item.href}
               className={`nav-link ${
                 activeSection === item.href.slice(1) ? "nav-link-active" : ""
               }`}
+              strength={0.4}
             >
               {item.label}
-            </a>
+            </MagneticLink>
           ))}
         </div>
       </div>
