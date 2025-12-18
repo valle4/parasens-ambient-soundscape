@@ -61,9 +61,9 @@ const ContactSection = () => {
           >
             <form
               onSubmit={handleSubmit}
-              className="space-y-8"
+              className="space-y-8 flex flex-col items-center"
             >
-            <div>
+            <div className="w-full max-w-md">
               <input
                 type="text"
                 name="name"
@@ -71,11 +71,11 @@ const ContactSection = () => {
                 onChange={handleChange}
                 placeholder="Name"
                 required
-                className="input-minimal"
+                className="input-minimal text-center"
               />
             </div>
 
-            <div>
+            <div className="w-full max-w-md">
               <input
                 type="email"
                 name="email"
@@ -83,11 +83,11 @@ const ContactSection = () => {
                 onChange={handleChange}
                 placeholder="Email"
                 required
-                className="input-minimal"
+                className="input-minimal text-center"
               />
             </div>
 
-            <div>
+            <div className="w-full max-w-md">
               <textarea
                 name="message"
                 value={formData.message}
@@ -95,7 +95,7 @@ const ContactSection = () => {
                 placeholder="Message"
                 rows={4}
                 required
-                className="input-minimal resize-none"
+                className="input-minimal resize-none text-center"
               />
             </div>
 
@@ -110,7 +110,7 @@ const ContactSection = () => {
 
         <div
           ref={footerRef}
-          className={`mt-24 pt-12 border-t border-border scroll-reveal scroll-reveal-delay-2 ${footerRevealed ? "revealed" : ""}`}
+          className={`mt-24 pt-12 border-t border-border scroll-reveal scroll-reveal-delay-2 text-center ${footerRevealed ? "revealed" : ""}`}
         >
           <p className="text-muted-foreground text-sm">
             Or write directly:{" "}
