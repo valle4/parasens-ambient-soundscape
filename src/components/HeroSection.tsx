@@ -11,7 +11,7 @@ const HeroSection = () => {
         </h1>
 
         <p className="mt-8 md:mt-12 text-xl md:text-2xl lg:text-3xl text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto opacity-0 animate-fade-up animation-delay-800">
-          Music for every Moment
+          sets the tone.
         </p>
 
         <div className="mt-16 md:mt-24 opacity-0 animate-fade-in animation-delay-1000">
