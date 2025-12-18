@@ -247,7 +247,7 @@ const MusicPlayer = () => {
         >
           {currentTrack ? (
             <iframe
-              src={`https://open.spotify.com/embed/track/${currentTrack.spotifyId}?utm_source=generator&theme=0`}
+              src={`https://open.spotify.com/embed/track/${currentTrack.spotifyId}?utm_source=generator&theme=0&autoplay=1`}
               width="100%"
               height="152"
               frameBorder="0"
