@@ -11,27 +11,21 @@ interface Track {
 
 const genres = [
   "All",
+  "Piano",
   "Ambient",
-  "Piano",
-  "Sleep",
-  "Jazz",
-  "Lullabies",
-  "Focus",
-  "Piano",
-  "Guitar",
   "Acoustic Cover",
   "Jazz",
   "Bossa Nova",
-  "Christmas",
   "Classical",
   "Lullabies",
-  "Christian",
+  "Guitar",
   "Rain & Nature",
-  "Ambient",
   "Experimental",
+  "Christian",
   "LoFi",
   "Synthwave",
   "Phonk",
+  "Christmas",
 ];
 
 // Helper to extract Spotify track ID from URL or return as-is if already an ID
