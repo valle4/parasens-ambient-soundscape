@@ -6,7 +6,7 @@ const AboutSection = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const { ref: titleRef, isRevealed: titleRevealed } = useScrollReveal();
 
-  const lines = ["PARASENS exists to create space.", "Not to fill silence, but to shape it.", "This is mood, managed."];
+  const lines = ["PARASENS exists to simplify the path between artists and labels.", "Through close collaboration with leading mood-music platforms, we handle the practical layers so musicians can remain fully present in the creative process."];
 
   useEffect(() => {
     const observer = new IntersectionObserver(
