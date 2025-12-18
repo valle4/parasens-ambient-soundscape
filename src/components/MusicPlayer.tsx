@@ -1074,6 +1074,7 @@ const tracks: Track[] = [
     title: "vintara",
     artist: "léas solais",
     genre: "LoFi",
+    subCategory: "Chill",
     spotifyId: "6iDN4e3RQQBXi4vn7k3V2M",
   },
   // LoFi - Study
@@ -1082,6 +1083,7 @@ const tracks: Track[] = [
     title: "unwind rewind",
     artist: "Mambojambo",
     genre: "LoFi",
+    subCategory: "Study",
     spotifyId: "2het2Gw9kQZKOZl2ATnog3",
   },
   {
@@ -1089,6 +1091,7 @@ const tracks: Track[] = [
     title: "Reboot",
     artist: "Mambojambo",
     genre: "LoFi",
+    subCategory: "Study",
     spotifyId: "74ShLjHTOr2HEnFwSBPQZ2",
   },
   {
@@ -1096,6 +1099,7 @@ const tracks: Track[] = [
     title: "food for thought",
     artist: "Mambojambo",
     genre: "LoFi",
+    subCategory: "Study",
     spotifyId: "503sUNMLxKorWDZDS823ft",
   },
   // LoFi - Night
@@ -1104,6 +1108,7 @@ const tracks: Track[] = [
     title: "memory",
     artist: "Nebu",
     genre: "LoFi",
+    subCategory: "Night",
     spotifyId: "4gMy8CXhwcaC9ThiZR1eHo",
   },
   {
@@ -1111,6 +1116,7 @@ const tracks: Track[] = [
     title: "embrace",
     artist: "Nebu",
     genre: "LoFi",
+    subCategory: "Night",
     spotifyId: "7h3JilWZMYkOkc5y8OnBvn",
   },
   {
@@ -1118,6 +1124,7 @@ const tracks: Track[] = [
     title: "sonodex",
     artist: "léas solais",
     genre: "LoFi",
+    subCategory: "Night",
     spotifyId: "3q78jRuBitgRPextx7lIIU",
   },
 
@@ -1127,6 +1134,7 @@ const tracks: Track[] = [
     title: "UUM PA UUM PA - SPED UP",
     artist: "M3TAMORPH",
     genre: "Phonk",
+    subCategory: "Sped Up",
     spotifyId: "3PyEMQhlWbqn47fG24lS3D",
   },
   {
@@ -1134,6 +1142,7 @@ const tracks: Track[] = [
     title: "PULSO - SPED UP",
     artist: "M3TAMORPH",
     genre: "Phonk",
+    subCategory: "Sped Up",
     spotifyId: "7BLCqCZFd9MsXhMP1lOxrp",
   },
   {
@@ -1141,6 +1150,7 @@ const tracks: Track[] = [
     title: "Big Back Blesser - SPED UP",
     artist: "M3TAMORPH",
     genre: "Phonk",
+    subCategory: "Sped Up",
     spotifyId: "6pA6oCnQtazmXXt9Ek53Vr",
   },
   // Phonk - Hard
@@ -1149,6 +1159,7 @@ const tracks: Track[] = [
     title: "Malditas",
     artist: "M3TAMORPH",
     genre: "Phonk",
+    subCategory: "Hard",
     spotifyId: "7igJ8aFOXsSBxY8kSVlihW",
   },
   {
@@ -1156,6 +1167,7 @@ const tracks: Track[] = [
     title: "Avada Kedavra",
     artist: "M3TAMORPH",
     genre: "Phonk",
+    subCategory: "Hard",
     spotifyId: "0rkZSeUtcXliWF1bZjXPPD",
   },
   // Phonk - Drift
@@ -1164,6 +1176,7 @@ const tracks: Track[] = [
     title: "FINNA FINNA FINNA",
     artist: "DJ BINKS",
     genre: "Phonk",
+    subCategory: "Drift",
     spotifyId: "6Eykhf6fdAmOLjkSy9d5i2",
   },
 ];
