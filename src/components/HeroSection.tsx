@@ -11,7 +11,7 @@ const HeroSection = () => {
         </h1>
 
         <p className="mt-6 md:mt-8 text-sm md:text-base tracking-[0.2em] uppercase text-muted-foreground/60 font-light opacity-0 animate-fade-up animation-delay-800">
-         sets the tone
+          set the tone
         </p>
 
         <div className="mt-16 md:mt-24 opacity-0 animate-fade-in animation-delay-1000">
