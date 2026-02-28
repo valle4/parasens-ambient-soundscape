@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PARASENS logo">
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PARASENS logo – transparent background">
   <defs>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&amp;display=swap');
@@ -13,10 +13,8 @@
     </linearGradient>
   </defs>
 
-  <!-- Dark background matching site --background: 0 0% 4% -->
-  <rect width="1920" height="1080" fill="#0A0A0A"/>
+  <!-- No background – transparent -->
 
-  <!-- Top line: MOOD MUSIC MANAGEMENT -->
   <text
     x="960"
     y="390"
@@ -30,7 +28,6 @@
     MOOD MUSIC MANAGEMENT
   </text>
 
-  <!-- Center: PARASENS with metallic gradient matching .text-gradient -->
   <text
     x="960"
     y="580"
@@ -44,7 +41,6 @@
     PARASENS
   </text>
 
-  <!-- Bottom line: SET THE TONE -->
   <text
     x="960"
     y="700"
