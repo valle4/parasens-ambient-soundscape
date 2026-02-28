@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PARASENS logo">
+  <defs>
+    <linearGradient id="parasensMetal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F3F4F6"/>
+      <stop offset="45%" stop-color="#D9DDE2"/>
+      <stop offset="100%" stop-color="#A8AFB8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#06080D"/>
+
+  <text
+    x="960"
+    y="378"
+    text-anchor="middle"
+    fill="#7E838D"
+    font-family="Montserrat, Avenir Next, Helvetica Neue, Arial, sans-serif"
+    font-size="62"
+    font-weight="500"
+    letter-spacing="22"
+  >
+    MOOD MUSIC MANAGEMENT
+  </text>
+
+  <text
+    x="960"
+    y="622"
+    text-anchor="middle"
+    fill="url(#parasensMetal)"
+    font-family="Montserrat, Avenir Next, Helvetica Neue, Arial, sans-serif"
+    font-size="220"
+    font-weight="800"
+    letter-spacing="10"
+  >
+    PARASENS
+  </text>
+
+  <text
+    x="960"
+    y="814"
+    text-anchor="middle"
+    fill="#5D6470"
+    font-family="Montserrat, Avenir Next, Helvetica Neue, Arial, sans-serif"
+    font-size="82"
+    font-weight="500"
+    letter-spacing="20"
+  >
+    SET THE TONE
+  </text>
+</svg>
