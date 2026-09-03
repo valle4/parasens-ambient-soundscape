@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PortalLogin from "./pages/PortalLogin";
 import PortalDashboard from "./pages/PortalDashboard";
+import PortalNewRelease from "./pages/PortalNewRelease";
 import CustomCursor from "./components/CustomCursor";
 import MouseSpotlight from "./components/MouseSpotlight";
 
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/portal" element={<PortalLogin />} />
           <Route path="/portal/login" element={<PortalLogin />} />
           <Route path="/portal/dashboard" element={<PortalDashboard />} />
+          <Route path="/portal/releases/new" element={<PortalNewRelease />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

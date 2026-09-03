@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Check, Clock3, FileEdit, LogOut } from "lucide-react";
+import { ArrowRight, Check, Clock3, FileEdit, LogOut, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 
 type CatalogueTab = "drafts" | "submitted" | "accepted";
@@ -122,16 +122,26 @@ const PortalDashboard = () => {
       </header>
 
       <section className="relative z-10 mx-auto w-full max-w-6xl pb-20 pt-20 opacity-0 animate-fade-up animation-delay-200 md:pt-28">
-        <div className="max-w-2xl">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-            Artist catalogue
-          </p>
-          <h1 className="mt-5 font-display text-4xl font-medium tracking-[-0.025em] md:text-6xl">
-            Catalogue
-          </h1>
-          <p className="mt-5 max-w-lg text-sm font-light leading-6 text-muted-foreground">
-            Your drafts, submitted releases, and tracks accepted by PARASENS.
-          </p>
+        <div className="flex flex-col gap-10 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+              Artist catalogue
+            </p>
+            <h1 className="mt-5 font-display text-4xl font-medium tracking-[-0.025em] md:text-6xl">
+              Catalogue
+            </h1>
+            <p className="mt-5 max-w-lg text-sm font-light leading-6 text-muted-foreground">
+              Your drafts, submitted releases, and tracks accepted by PARASENS.
+            </p>
+          </div>
+
+          <Link
+            to="/portal/releases/new"
+            className="group inline-flex w-full items-center justify-between gap-10 border border-foreground px-6 py-4 text-[10px] uppercase tracking-[0.2em] transition-all duration-500 hover:bg-foreground hover:text-background sm:w-auto"
+          >
+            New release
+            <Plus aria-hidden="true" className="h-4 w-4 transition-transform duration-500 group-hover:rotate-90" strokeWidth={1.5} />
+          </Link>
         </div>
 
         <div className="mt-16 border-b border-border md:mt-20">

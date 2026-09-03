@@ -1,0 +1,371 @@
+import { FormEvent, useState } from "react";
+import { ArrowLeft, ArrowRight, FileAudio, ImagePlus, LogOut, Plus, Trash2, Upload } from "lucide-react";
+import { Link } from "react-router-dom";
+
+type ReleaseType = "Single" | "EP" | "Album";
+
+type TrackDraft = {
+  id: number;
+  title: string;
+  composers: string;
+  notes: string;
+  files: string[];
+};
+
+const emptyTrack = (id: number): TrackDraft => ({
+  id,
+  title: "",
+  composers: "",
+  notes: "",
+  files: [],
+});
+
+const fieldClassName =
+  "mt-3 w-full border-0 border-b border-border bg-transparent px-0 py-3 text-sm text-foreground outline-none transition-colors duration-500 placeholder:text-muted-foreground/35 focus:border-foreground";
+
+const labelClassName = "block text-[9px] uppercase tracking-[0.24em] text-muted-foreground";
+
+const PortalNewRelease = () => {
+  const [releaseType, setReleaseType] = useState<ReleaseType>("Single");
+  const [artworkName, setArtworkName] = useState("");
+  const [tracks, setTracks] = useState<TrackDraft[]>([emptyTrack(1)]);
+  const [nextTrackId, setNextTrackId] = useState(2);
+  const [notice, setNotice] = useState("");
+
+  const updateTrack = (id: number, field: keyof Omit<TrackDraft, "id" | "files">, value: string) => {
+    setTracks((current) =>
+      current.map((track) => (track.id === id ? { ...track, [field]: value } : track)),
+    );
+  };
+
+  const updateTrackFiles = (id: number, files: FileList | null) => {
+    setTracks((current) =>
+      current.map((track) =>
+        track.id === id
+          ? { ...track, files: files ? Array.from(files).map((file) => file.name) : [] }
+          : track,
+      ),
+    );
+  };
+
+  const addTrack = () => {
+    setTracks((current) => [...current, emptyTrack(nextTrackId)]);
+    setNextTrackId((current) => current + 1);
+  };
+
+  const removeTrack = (id: number) => {
+    setTracks((current) => current.filter((track) => track.id !== id));
+  };
+
+  const saveDraft = () => {
+    setNotice("Draft saving will be connected when we build the database.");
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setNotice("The review step will be connected next. Nothing has been submitted.");
+  };
+
+  return (
+    <main className="relative min-h-screen overflow-hidden bg-background px-6 py-6 text-foreground md:px-12 md:py-8 lg:px-24">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,hsl(var(--foreground)/0.035),transparent_34%)]" />
+
+      <header className="relative z-10 flex items-center justify-between border-b border-border pb-6 opacity-0 animate-fade-in">
+        <Link
+          to="/"
+          aria-label="Return to the Parasens website"
+          className="font-display text-base font-semibold tracking-[0.18em] transition-opacity duration-500 hover:opacity-60 md:text-lg"
+        >
+          PARASENS
+        </Link>
+
+        <div className="flex items-center gap-5 md:gap-8">
+          <span className="hidden text-[10px] uppercase tracking-[0.28em] text-muted-foreground sm:inline">
+            Artist portal
+          </span>
+          <span className="hidden h-4 w-px bg-border sm:block" />
+          <Link
+            to="/portal"
+            className="group inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted-foreground transition-colors duration-500 hover:text-foreground"
+          >
+            Sign out
+            <LogOut aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.5} />
+          </Link>
+        </div>
+      </header>
+
+      <form
+        onSubmit={handleSubmit}
+        className="relative z-10 mx-auto w-full max-w-6xl pb-24 pt-12 opacity-0 animate-fade-up animation-delay-200 md:pt-16"
+      >
+        <Link
+          to="/portal/dashboard"
+          className="group inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-muted-foreground transition-colors duration-500 hover:text-foreground"
+        >
+          <ArrowLeft
+            aria-hidden="true"
+            className="h-3.5 w-3.5 transition-transform duration-500 group-hover:-translate-x-1"
+            strokeWidth={1.5}
+          />
+          Catalogue
+        </Link>
+
+        <div className="mt-12 max-w-2xl md:mt-16">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">New release</p>
+          <h1 className="mt-5 font-display text-4xl font-medium tracking-[-0.025em] md:text-6xl">
+            Tell us about the music.
+          </h1>
+          <p className="mt-5 max-w-lg text-sm font-light leading-6 text-muted-foreground">
+            Start a draft now. You can review everything before it is submitted to PARASENS.
+          </p>
+        </div>
+
+        <section className="mt-16 border-t border-border pt-8 md:mt-24 md:pt-10">
+          <div className="grid gap-10 lg:grid-cols-[0.34fr_1fr] lg:gap-20">
+            <div>
+              <p className="text-[9px] uppercase tracking-[0.28em] text-muted-foreground">01</p>
+              <h2 className="mt-4 font-display text-2xl tracking-[-0.02em]">Release information</h2>
+              <p className="mt-4 max-w-xs text-xs font-light leading-5 text-muted-foreground">
+                The information that applies to the release as a whole.
+              </p>
+            </div>
+
+            <div className="grid gap-x-10 gap-y-10 md:grid-cols-2">
+              <label className={labelClassName}>
+                Primary artist
+                <input name="primaryArtist" required placeholder="Artist name" className={fieldClassName} />
+              </label>
+
+              <label className={labelClassName}>
+                Release title
+                <input name="releaseTitle" required placeholder="Title of the release" className={fieldClassName} />
+              </label>
+
+              <label className={labelClassName}>
+                Label
+                <input name="label" required defaultValue="PARASENS" className={fieldClassName} />
+              </label>
+
+              <fieldset>
+                <legend className={labelClassName}>Release type</legend>
+                <div className="mt-3 grid grid-cols-3 border border-border">
+                  {(["Single", "EP", "Album"] as ReleaseType[]).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      aria-pressed={releaseType === type}
+                      onClick={() => setReleaseType(type)}
+                      className={`border-r border-border px-3 py-3 text-[10px] uppercase tracking-[0.16em] transition-colors duration-300 last:border-r-0 ${
+                        releaseType === type
+                          ? "bg-foreground text-background"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+                <input type="hidden" name="releaseType" value={releaseType} />
+              </fieldset>
+
+              <label className={labelClassName}>
+                Genre
+                <input name="genre" required placeholder="e.g. Ambient" className={fieldClassName} />
+              </label>
+
+              <label className={labelClassName}>
+                Playlist
+                <input name="playlist" placeholder="Optional playlist or mood" className={fieldClassName} />
+              </label>
+
+              <label className={`md:col-span-2 ${labelClassName}`}>
+                General notes
+                <textarea
+                  name="generalNotes"
+                  rows={4}
+                  placeholder="Anything else you would like us to know about the release"
+                  className={`${fieldClassName} resize-none leading-6`}
+                />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-16 border-t border-border pt-8 md:mt-24 md:pt-10">
+          <div className="grid gap-10 lg:grid-cols-[0.34fr_1fr] lg:gap-20">
+            <div>
+              <p className="text-[9px] uppercase tracking-[0.28em] text-muted-foreground">02</p>
+              <h2 className="mt-4 font-display text-2xl tracking-[-0.02em]">Artwork</h2>
+              <p className="mt-4 max-w-xs text-xs font-light leading-5 text-muted-foreground">
+                Optional. Upload finished artwork or share the direction you have in mind.
+              </p>
+            </div>
+
+            <div className="grid gap-10 md:grid-cols-2">
+              <label className="group flex min-h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-border px-6 py-8 text-center transition-colors duration-500 hover:border-foreground/60">
+                <ImagePlus aria-hidden="true" className="h-5 w-5 text-muted-foreground" strokeWidth={1.25} />
+                <span className="mt-4 text-[10px] uppercase tracking-[0.2em]">
+                  {artworkName || "Choose artwork"}
+                </span>
+                <span className="mt-2 text-[10px] text-muted-foreground">JPG, PNG or PDF</span>
+                <input
+                  type="file"
+                  name="artwork"
+                  accept="image/jpeg,image/png,application/pdf"
+                  className="sr-only"
+                  onChange={(event) => setArtworkName(event.target.files?.[0]?.name || "")}
+                />
+              </label>
+
+              <label className={labelClassName}>
+                Artwork inspiration
+                <textarea
+                  name="artworkInspiration"
+                  rows={6}
+                  placeholder="Describe the visual direction or paste reference links"
+                  className={`${fieldClassName} resize-none leading-6`}
+                />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-16 border-t border-border pt-8 md:mt-24 md:pt-10">
+          <div className="grid gap-10 lg:grid-cols-[0.34fr_1fr] lg:gap-20">
+            <div>
+              <p className="text-[9px] uppercase tracking-[0.28em] text-muted-foreground">03</p>
+              <h2 className="mt-4 font-display text-2xl tracking-[-0.02em]">Tracks</h2>
+              <p className="mt-4 max-w-xs text-xs font-light leading-5 text-muted-foreground">
+                Add the track information and all audio stems for this release.
+              </p>
+            </div>
+
+            <div>
+              <div className="space-y-6">
+                {tracks.map((track, index) => (
+                  <fieldset key={track.id} className="border border-border p-5 md:p-8">
+                    <legend className="sr-only">Track {index + 1}</legend>
+                    <div className="flex items-center justify-between border-b border-border pb-5">
+                      <span className="text-[10px] uppercase tracking-[0.24em]">Track {index + 1}</span>
+                      {tracks.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeTrack(track.id)}
+                          className="inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.18em] text-muted-foreground transition-colors duration-300 hover:text-foreground"
+                        >
+                          Remove
+                          <Trash2 aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.25} />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="mt-7 grid gap-x-10 gap-y-9 md:grid-cols-2">
+                      <label className={labelClassName}>
+                        Track title
+                        <input
+                          name={`track-${track.id}-title`}
+                          required
+                          value={track.title}
+                          onChange={(event) => updateTrack(track.id, "title", event.target.value)}
+                          placeholder="Title"
+                          className={fieldClassName}
+                        />
+                      </label>
+
+                      <label className={labelClassName}>
+                        Songwriters / composers
+                        <input
+                          name={`track-${track.id}-composers`}
+                          required
+                          value={track.composers}
+                          onChange={(event) => updateTrack(track.id, "composers", event.target.value)}
+                          placeholder="Full legal names"
+                          className={fieldClassName}
+                        />
+                      </label>
+
+                      <label className="group flex min-h-36 cursor-pointer flex-col items-center justify-center border border-dashed border-border px-5 py-7 text-center transition-colors duration-500 hover:border-foreground/60 md:col-span-2">
+                        {track.files.length > 0 ? (
+                          <FileAudio aria-hidden="true" className="h-5 w-5 text-foreground" strokeWidth={1.25} />
+                        ) : (
+                          <Upload aria-hidden="true" className="h-5 w-5 text-muted-foreground" strokeWidth={1.25} />
+                        )}
+                        <span className="mt-4 text-[10px] uppercase tracking-[0.2em]">
+                          {track.files.length > 0
+                            ? `${track.files.length} audio file${track.files.length === 1 ? "" : "s"} selected`
+                            : "Choose audio stems"}
+                        </span>
+                        <span className="mt-2 max-w-md text-[10px] leading-4 text-muted-foreground">
+                          {track.files.length > 0 ? track.files.join(" · ") : "Select one or multiple files"}
+                        </span>
+                        <input
+                          type="file"
+                          name={`track-${track.id}-files`}
+                          accept="audio/*,.wav,.aiff,.aif,.flac,.zip"
+                          multiple
+                          required
+                          className="sr-only"
+                          onChange={(event) => updateTrackFiles(track.id, event.target.files)}
+                        />
+                      </label>
+
+                      <label className={`md:col-span-2 ${labelClassName}`}>
+                        Track-specific notes
+                        <textarea
+                          name={`track-${track.id}-notes`}
+                          rows={3}
+                          value={track.notes}
+                          onChange={(event) => updateTrack(track.id, "notes", event.target.value)}
+                          placeholder="Mix notes, featured artists, versions, or anything specific to this track"
+                          className={`${fieldClassName} resize-none leading-6`}
+                        />
+                      </label>
+                    </div>
+                  </fieldset>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={addTrack}
+                className="group mt-6 flex w-full items-center justify-center gap-3 border border-border px-5 py-4 text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors duration-500 hover:border-foreground/60 hover:text-foreground"
+              >
+                <Plus aria-hidden="true" className="h-4 w-4" strokeWidth={1.25} />
+                Add another track
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <div className="mt-16 border-t border-border pt-8 md:mt-24 md:flex md:items-center md:justify-between">
+          <div aria-live="polite" className="min-h-5 text-xs text-muted-foreground">
+            {notice || "Prototype form — nothing is uploaded or saved yet."}
+          </div>
+
+          <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row md:mt-0">
+            <button
+              type="button"
+              onClick={saveDraft}
+              className="px-7 py-4 text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors duration-500 hover:text-foreground"
+            >
+              Save draft
+            </button>
+            <button
+              type="submit"
+              className="group inline-flex items-center justify-between gap-12 border border-foreground px-7 py-4 text-[10px] uppercase tracking-[0.2em] transition-all duration-500 hover:bg-foreground hover:text-background"
+            >
+              Continue to review
+              <ArrowRight
+                aria-hidden="true"
+                className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-1"
+                strokeWidth={1.5}
+              />
+            </button>
+          </div>
+        </div>
+      </form>
+    </main>
+  );
+};
+
+export default PortalNewRelease;
