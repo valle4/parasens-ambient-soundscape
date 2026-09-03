@@ -42,28 +42,9 @@ const PortalLogin = () => {
       </header>
 
       <section className="relative z-10 mx-auto flex min-h-[calc(100vh-7rem)] w-full max-w-6xl items-center justify-center py-16">
-        <div className="grid w-full items-center gap-16 lg:grid-cols-[1fr_0.78fr] lg:gap-24">
-          <div className="hidden opacity-0 animate-fade-up animation-delay-200 lg:block">
-            <p className="mb-8 text-xs uppercase tracking-[0.32em] text-muted-foreground">
-              Private access
-            </p>
-            <h1 className="max-w-xl font-display text-5xl font-medium leading-[1.08] tracking-[-0.025em] xl:text-6xl">
-              Your music,
-              <br />
-              in one place.
-            </h1>
-            <div className="mt-12 h-px w-16 bg-foreground/30" />
-            <p className="mt-8 max-w-sm text-sm font-light leading-7 text-muted-foreground">
-              Submit new releases and follow your catalogue through every stage.
-            </p>
-          </div>
-
-          <div className="mx-auto w-full max-w-md opacity-0 animate-fade-up animation-delay-400 lg:mx-0">
+        <div className="w-full max-w-md opacity-0 animate-fade-up animation-delay-200">
             {!isSubmitted ? (
               <div>
-                <p className="mb-5 text-xs uppercase tracking-[0.3em] text-muted-foreground lg:hidden">
-                  Private access
-                </p>
                 <h1 className="font-display text-3xl font-medium tracking-[-0.02em] md:text-4xl">
                   Sign in
                 </h1>
@@ -141,7 +122,6 @@ const PortalLogin = () => {
                 </p>
               </div>
             )}
-          </div>
         </div>
       </section>
     </main>
