@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, FileAudio, ImagePlus, LogOut, Plus, Trash2, Uplo
 import { Link } from "react-router-dom";
 
 type ReleaseType = "Single" | "EP" | "Album";
+type FormStep = 1 | 2 | 3;
 
 type TrackDraft = {
   id: number;
@@ -25,7 +26,15 @@ const fieldClassName =
 
 const labelClassName = "block text-[9px] uppercase tracking-[0.24em] text-muted-foreground";
 
+const formSteps: Array<{ id: FormStep; label: string }> = [
+  { id: 1, label: "Release information" },
+  { id: 2, label: "Artwork" },
+  { id: 3, label: "Tracks" },
+];
+
 const PortalNewRelease = () => {
+  const [currentStep, setCurrentStep] = useState<FormStep>(1);
+  const [furthestStep, setFurthestStep] = useState<FormStep>(1);
   const [releaseType, setReleaseType] = useState<ReleaseType>("Single");
   const [primaryArtist, setPrimaryArtist] = useState("");
   const [releaseTitle, setReleaseTitle] = useState("");
@@ -67,8 +76,37 @@ const PortalNewRelease = () => {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (currentStep < 3) {
+      const nextStep = (currentStep + 1) as FormStep;
+      setCurrentStep(nextStep);
+      setFurthestStep((current) => (current < nextStep ? nextStep : current));
+      setNotice("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     setNotice("The review step will be connected next. Nothing has been submitted.");
   };
+
+  const goToStep = (step: FormStep) => {
+    if (step > furthestStep) return;
+    setCurrentStep(step);
+    setNotice("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const goBack = () => {
+    if (currentStep === 1) return;
+    goToStep((currentStep - 1) as FormStep);
+  };
+
+  const continueLabel =
+    currentStep === 1
+      ? "Continue to artwork"
+      : currentStep === 2
+        ? "Continue to tracks"
+        : "Continue to review";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background px-6 py-6 text-foreground md:px-12 md:py-8 lg:px-24">
@@ -124,7 +162,53 @@ const PortalNewRelease = () => {
           </p>
         </div>
 
-        <section className="mt-16 border-t border-border pt-8 md:mt-24 md:pt-10">
+        <nav aria-label="Release form progress" className="mt-14 border-y border-border md:mt-20">
+          <ol className="grid grid-cols-3">
+            {formSteps.map((step) => {
+              const isCurrent = currentStep === step.id;
+              const isAvailable = step.id <= furthestStep;
+              const isComplete = step.id < furthestStep;
+
+              return (
+                <li key={step.id} className="border-r border-border last:border-r-0">
+                  <button
+                    type="button"
+                    disabled={!isAvailable}
+                    aria-current={isCurrent ? "step" : undefined}
+                    onClick={() => goToStep(step.id)}
+                    className={`relative flex min-h-20 w-full flex-col justify-center px-3 py-4 text-left transition-colors duration-500 sm:px-5 md:min-h-24 md:px-7 ${
+                      isCurrent
+                        ? "bg-foreground/[0.035] text-foreground"
+                        : isAvailable
+                          ? "text-muted-foreground hover:text-foreground"
+                          : "cursor-not-allowed text-muted-foreground/35"
+                    }`}
+                  >
+                    <span className="text-[9px] tracking-[0.22em]">0{step.id}</span>
+                    <span className="mt-2 hidden text-[9px] uppercase tracking-[0.16em] sm:block md:text-[10px]">
+                      {step.label}
+                    </span>
+                    <span className="mt-2 text-[8px] uppercase tracking-[0.14em] text-muted-foreground sm:hidden">
+                      {step.id === 1 ? "Release" : step.label}
+                    </span>
+                    {isComplete && (
+                      <span className="absolute right-3 top-3 h-1.5 w-1.5 rounded-full bg-foreground md:right-5 md:top-5" />
+                    )}
+                    <span
+                      className={`absolute bottom-0 left-0 h-px bg-foreground transition-all duration-500 ${
+                        isCurrent ? "w-full opacity-100" : "w-0 opacity-0"
+                      }`}
+                    />
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+
+        <section
+          className={`${currentStep === 1 ? "block animate-fade-up" : "hidden"} mt-16 md:mt-20`}
+        >
           <div className="grid gap-10 lg:grid-cols-[0.34fr_1fr] lg:gap-20">
             <div>
               <p className="text-[9px] uppercase tracking-[0.28em] text-muted-foreground">01</p>
@@ -156,7 +240,7 @@ const PortalNewRelease = () => {
                 <input
                   id="primary-artist"
                   name="primaryArtist"
-                  required={!parasensChoosesArtist}
+                  required={currentStep === 1 && !parasensChoosesArtist}
                   disabled={parasensChoosesArtist}
                   value={parasensChoosesArtist ? "" : primaryArtist}
                   onChange={(event) => setPrimaryArtist(event.target.value)}
@@ -191,7 +275,7 @@ const PortalNewRelease = () => {
                 <input
                   id="release-title"
                   name="releaseTitle"
-                  required={!parasensChoosesTitle}
+                  required={currentStep === 1 && !parasensChoosesTitle}
                   disabled={parasensChoosesTitle}
                   value={parasensChoosesTitle ? "" : releaseTitle}
                   onChange={(event) => setReleaseTitle(event.target.value)}
@@ -207,7 +291,12 @@ const PortalNewRelease = () => {
 
               <label className={labelClassName}>
                 Label
-                <input name="label" required defaultValue="PARASENS" className={fieldClassName} />
+                <input
+                  name="label"
+                  required={currentStep === 1}
+                  placeholder="Which label is this release for?"
+                  className={`${fieldClassName} placeholder:text-muted-foreground/70`}
+                />
               </label>
 
               <fieldset>
@@ -234,7 +323,12 @@ const PortalNewRelease = () => {
 
               <label className={labelClassName}>
                 Genre
-                <input name="genre" required placeholder="e.g. Ambient" className={fieldClassName} />
+                <input
+                  name="genre"
+                  required={currentStep === 1}
+                  placeholder="e.g. Ambient"
+                  className={fieldClassName}
+                />
               </label>
 
               <label className={labelClassName}>
@@ -255,7 +349,9 @@ const PortalNewRelease = () => {
           </div>
         </section>
 
-        <section className="mt-16 border-t border-border pt-8 md:mt-24 md:pt-10">
+        <section
+          className={`${currentStep === 2 ? "block animate-fade-up" : "hidden"} mt-16 md:mt-20`}
+        >
           <div className="grid gap-10 lg:grid-cols-[0.34fr_1fr] lg:gap-20">
             <div>
               <p className="text-[9px] uppercase tracking-[0.28em] text-muted-foreground">02</p>
@@ -294,7 +390,9 @@ const PortalNewRelease = () => {
           </div>
         </section>
 
-        <section className="mt-16 border-t border-border pt-8 md:mt-24 md:pt-10">
+        <section
+          className={`${currentStep === 3 ? "block animate-fade-up" : "hidden"} mt-16 md:mt-20`}
+        >
           <div className="grid gap-10 lg:grid-cols-[0.34fr_1fr] lg:gap-20">
             <div>
               <p className="text-[9px] uppercase tracking-[0.28em] text-muted-foreground">03</p>
@@ -328,7 +426,7 @@ const PortalNewRelease = () => {
                         Track title
                         <input
                           name={`track-${track.id}-title`}
-                          required
+                          required={currentStep === 3}
                           value={track.title}
                           onChange={(event) => updateTrack(track.id, "title", event.target.value)}
                           placeholder="Title"
@@ -340,7 +438,7 @@ const PortalNewRelease = () => {
                         Songwriters / composers
                         <input
                           name={`track-${track.id}-composers`}
-                          required
+                          required={currentStep === 3}
                           value={track.composers}
                           onChange={(event) => updateTrack(track.id, "composers", event.target.value)}
                           placeholder="Full legal names"
@@ -367,7 +465,7 @@ const PortalNewRelease = () => {
                           name={`track-${track.id}-files`}
                           accept="audio/*,.wav,.aiff,.aif,.flac,.zip"
                           multiple
-                          required
+                          required={currentStep === 3}
                           className="sr-only"
                           onChange={(event) => updateTrackFiles(track.id, event.target.files)}
                         />
@@ -401,12 +499,31 @@ const PortalNewRelease = () => {
           </div>
         </section>
 
-        <div className="mt-16 border-t border-border pt-8 md:mt-24 md:flex md:items-center md:justify-between">
-          <div aria-live="polite" className="min-h-5 text-xs text-muted-foreground">
-            {notice || "Prototype form — nothing is uploaded or saved yet."}
+        <div className="mt-16 border-t border-border pt-8 md:mt-20 md:flex md:items-center md:justify-between">
+          <div>
+            <p className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
+              Step {currentStep} of 3
+            </p>
+            <div aria-live="polite" className="mt-2 min-h-5 text-xs text-muted-foreground">
+              {notice || "Prototype form — nothing is uploaded or saved yet."}
+            </div>
           </div>
 
           <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row md:mt-0">
+            {currentStep > 1 && (
+              <button
+                type="button"
+                onClick={goBack}
+                className="group inline-flex items-center justify-center gap-3 px-5 py-4 text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors duration-500 hover:text-foreground"
+              >
+                <ArrowLeft
+                  aria-hidden="true"
+                  className="h-4 w-4 transition-transform duration-500 group-hover:-translate-x-1"
+                  strokeWidth={1.5}
+                />
+                Back
+              </button>
+            )}
             <button
               type="button"
               onClick={saveDraft}
@@ -418,7 +535,7 @@ const PortalNewRelease = () => {
               type="submit"
               className="group inline-flex items-center justify-between gap-12 border border-foreground px-7 py-4 text-[10px] uppercase tracking-[0.2em] transition-all duration-500 hover:bg-foreground hover:text-background"
             >
-              Continue to review
+              {continueLabel}
               <ArrowRight
                 aria-hidden="true"
                 className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-1"
