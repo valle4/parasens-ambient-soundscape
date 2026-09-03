@@ -27,6 +27,10 @@ const labelClassName = "block text-[9px] uppercase tracking-[0.24em] text-muted-
 
 const PortalNewRelease = () => {
   const [releaseType, setReleaseType] = useState<ReleaseType>("Single");
+  const [primaryArtist, setPrimaryArtist] = useState("");
+  const [releaseTitle, setReleaseTitle] = useState("");
+  const [parasensChoosesArtist, setParasensChoosesArtist] = useState(false);
+  const [parasensChoosesTitle, setParasensChoosesTitle] = useState(false);
   const [artworkName, setArtworkName] = useState("");
   const [tracks, setTracks] = useState<TrackDraft[]>([emptyTrack(1)]);
   const [nextTrackId, setNextTrackId] = useState(2);
@@ -131,15 +135,75 @@ const PortalNewRelease = () => {
             </div>
 
             <div className="grid gap-x-10 gap-y-10 md:grid-cols-2">
-              <label className={labelClassName}>
-                Primary artist
-                <input name="primaryArtist" required placeholder="Artist name" className={fieldClassName} />
-              </label>
+              <div>
+                <div className="flex items-center justify-between gap-4">
+                  <label htmlFor="primary-artist" className={labelClassName}>
+                    Primary artist
+                  </label>
+                  <button
+                    type="button"
+                    aria-pressed={parasensChoosesArtist}
+                    onClick={() => setParasensChoosesArtist((current) => !current)}
+                    className={`shrink-0 border-b pb-1 text-[8px] uppercase tracking-[0.16em] transition-colors duration-300 ${
+                      parasensChoosesArtist
+                        ? "border-foreground text-foreground"
+                        : "border-border text-muted-foreground hover:border-foreground/60 hover:text-foreground"
+                    }`}
+                  >
+                    {parasensChoosesArtist ? "PARASENS will decide" : "Ask PARASENS to decide"}
+                  </button>
+                </div>
+                <input
+                  id="primary-artist"
+                  name="primaryArtist"
+                  required={!parasensChoosesArtist}
+                  disabled={parasensChoosesArtist}
+                  value={parasensChoosesArtist ? "" : primaryArtist}
+                  onChange={(event) => setPrimaryArtist(event.target.value)}
+                  placeholder={parasensChoosesArtist ? "PARASENS will propose the artist name" : "Artist name"}
+                  className={`${fieldClassName} disabled:cursor-not-allowed disabled:text-muted-foreground`}
+                />
+                <input
+                  type="hidden"
+                  name="primaryArtistDecision"
+                  value={parasensChoosesArtist ? "parasens" : "artist"}
+                />
+              </div>
 
-              <label className={labelClassName}>
-                Release title
-                <input name="releaseTitle" required placeholder="Title of the release" className={fieldClassName} />
-              </label>
+              <div>
+                <div className="flex items-center justify-between gap-4">
+                  <label htmlFor="release-title" className={labelClassName}>
+                    Release title
+                  </label>
+                  <button
+                    type="button"
+                    aria-pressed={parasensChoosesTitle}
+                    onClick={() => setParasensChoosesTitle((current) => !current)}
+                    className={`shrink-0 border-b pb-1 text-[8px] uppercase tracking-[0.16em] transition-colors duration-300 ${
+                      parasensChoosesTitle
+                        ? "border-foreground text-foreground"
+                        : "border-border text-muted-foreground hover:border-foreground/60 hover:text-foreground"
+                    }`}
+                  >
+                    {parasensChoosesTitle ? "PARASENS will decide" : "Ask PARASENS to decide"}
+                  </button>
+                </div>
+                <input
+                  id="release-title"
+                  name="releaseTitle"
+                  required={!parasensChoosesTitle}
+                  disabled={parasensChoosesTitle}
+                  value={parasensChoosesTitle ? "" : releaseTitle}
+                  onChange={(event) => setReleaseTitle(event.target.value)}
+                  placeholder={parasensChoosesTitle ? "PARASENS will propose the release title" : "Title of the release"}
+                  className={`${fieldClassName} disabled:cursor-not-allowed disabled:text-muted-foreground`}
+                />
+                <input
+                  type="hidden"
+                  name="releaseTitleDecision"
+                  value={parasensChoosesTitle ? "parasens" : "artist"}
+                />
+              </div>
 
               <label className={labelClassName}>
                 Label
