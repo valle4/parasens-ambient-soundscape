@@ -4,13 +4,18 @@ import { Link } from "react-router-dom";
 
 type ReleaseType = "Single" | "EP" | "Album";
 type FormStep = 1 | 2 | 3;
+type AudioDelivery = "" | "stems" | "stereo" | "both";
+type StereoMixStatus = "" | "rough" | "mixed" | "mastered";
 
 type TrackDraft = {
   id: number;
   title: string;
   composers: string;
   notes: string;
-  files: string[];
+  audioDelivery: AudioDelivery;
+  stereoStatus: StereoMixStatus;
+  stereoFiles: string[];
+  stemFiles: string[];
 };
 
 const emptyTrack = (id: number): TrackDraft => ({
@@ -18,7 +23,10 @@ const emptyTrack = (id: number): TrackDraft => ({
   title: "",
   composers: "",
   notes: "",
-  files: [],
+  audioDelivery: "",
+  stereoStatus: "",
+  stereoFiles: [],
+  stemFiles: [],
 });
 
 const fieldClassName =
@@ -30,6 +38,18 @@ const formSteps: Array<{ id: FormStep; label: string }> = [
   { id: 1, label: "Release information" },
   { id: 2, label: "Artwork" },
   { id: 3, label: "Tracks" },
+];
+
+const audioDeliveryOptions: Array<{ id: Exclude<AudioDelivery, "">; label: string }> = [
+  { id: "stems", label: "Audio stems only" },
+  { id: "stereo", label: "Stereo mix only" },
+  { id: "both", label: "Stereo mix and stems" },
+];
+
+const stereoStatusOptions: Array<{ id: Exclude<StereoMixStatus, "">; label: string }> = [
+  { id: "rough", label: "Rough / reference mix" },
+  { id: "mixed", label: "Mixed — not mastered" },
+  { id: "mastered", label: "Mixed and mastered" },
 ];
 
 // TODO: Replace this prototype list with the artist names assigned to the signed-in account.
@@ -49,17 +69,33 @@ const PortalNewRelease = () => {
   const [nextTrackId, setNextTrackId] = useState(2);
   const [notice, setNotice] = useState("");
 
-  const updateTrack = (id: number, field: keyof Omit<TrackDraft, "id" | "files">, value: string) => {
+  const updateTrack = (id: number, field: "title" | "composers" | "notes", value: string) => {
     setTracks((current) =>
       current.map((track) => (track.id === id ? { ...track, [field]: value } : track)),
     );
   };
 
-  const updateTrackFiles = (id: number, files: FileList | null) => {
+  const updateTrackDelivery = (id: number, audioDelivery: AudioDelivery) => {
+    setTracks((current) =>
+      current.map((track) => (track.id === id ? { ...track, audioDelivery } : track)),
+    );
+  };
+
+  const updateStereoStatus = (id: number, stereoStatus: StereoMixStatus) => {
+    setTracks((current) =>
+      current.map((track) => (track.id === id ? { ...track, stereoStatus } : track)),
+    );
+  };
+
+  const updateTrackFiles = (
+    id: number,
+    field: "stereoFiles" | "stemFiles",
+    files: FileList | null,
+  ) => {
     setTracks((current) =>
       current.map((track) =>
         track.id === id
-          ? { ...track, files: files ? Array.from(files).map((file) => file.name) : [] }
+          ? { ...track, [field]: files ? Array.from(files).map((file) => file.name) : [] }
           : track,
       ),
     );
@@ -468,13 +504,19 @@ const PortalNewRelease = () => {
               <p className="text-[9px] uppercase tracking-[0.28em] text-muted-foreground">03</p>
               <h2 className="mt-4 font-display text-2xl tracking-[-0.02em]">Tracks</h2>
               <p className="mt-4 max-w-xs text-xs font-light leading-5 text-muted-foreground">
-                Add the track information and all audio stems for this release.
+                Add the track information and choose which audio files you are providing.
               </p>
             </div>
 
             <div>
               <div className="space-y-6">
-                {tracks.map((track, index) => (
+                {tracks.map((track, index) => {
+                  const requiresStereo =
+                    track.audioDelivery === "stereo" || track.audioDelivery === "both";
+                  const requiresStems =
+                    track.audioDelivery === "stems" || track.audioDelivery === "both";
+
+                  return (
                   <fieldset key={track.id} className="border border-border p-5 md:p-8">
                     <legend className="sr-only">Track {index + 1}</legend>
                     <div className="flex items-center justify-between border-b border-border pb-5">
@@ -516,30 +558,143 @@ const PortalNewRelease = () => {
                         />
                       </label>
 
-                      <label className="group flex min-h-36 cursor-pointer flex-col items-center justify-center border border-dashed border-border px-5 py-7 text-center transition-colors duration-500 hover:border-foreground/60 md:col-span-2">
-                        {track.files.length > 0 ? (
-                          <FileAudio aria-hidden="true" className="h-5 w-5 text-foreground" strokeWidth={1.25} />
-                        ) : (
-                          <Upload aria-hidden="true" className="h-5 w-5 text-muted-foreground" strokeWidth={1.25} />
-                        )}
-                        <span className="mt-4 text-[10px] uppercase tracking-[0.2em]">
-                          {track.files.length > 0
-                            ? `${track.files.length} audio file${track.files.length === 1 ? "" : "s"} selected`
-                            : "Choose audio stems"}
-                        </span>
-                        <span className="mt-2 max-w-md text-[10px] leading-4 text-muted-foreground">
-                          {track.files.length > 0 ? track.files.join(" · ") : "Select one or multiple files"}
-                        </span>
-                        <input
-                          type="file"
-                          name={`track-${track.id}-files`}
-                          accept="audio/*,.wav,.aiff,.aif,.flac,.zip"
-                          multiple
-                          required={currentStep === 3}
-                          className="sr-only"
-                          onChange={(event) => updateTrackFiles(track.id, event.target.files)}
-                        />
-                      </label>
+                      <fieldset className="md:col-span-2">
+                        <legend className={labelClassName}>What files are you providing?</legend>
+                        <div className="mt-3 grid border border-border md:grid-cols-3">
+                          {audioDeliveryOptions.map((option) => (
+                            <label
+                              key={option.id}
+                              className={`cursor-pointer border-b border-border px-4 py-4 text-[9px] uppercase tracking-[0.16em] transition-colors duration-300 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0 ${
+                                track.audioDelivery === option.id
+                                  ? "bg-foreground text-background"
+                                  : "text-muted-foreground hover:text-foreground"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name={`track-${track.id}-audio-delivery`}
+                                value={option.id}
+                                checked={track.audioDelivery === option.id}
+                                required={currentStep === 3}
+                                onChange={() => updateTrackDelivery(track.id, option.id)}
+                                className="sr-only"
+                              />
+                              {option.label}
+                            </label>
+                          ))}
+                        </div>
+                        <p className="mt-3 text-[10px] leading-4 text-muted-foreground">
+                          At least one audio format is required. If you provide stems, a stereo mix is optional.
+                        </p>
+                      </fieldset>
+
+                      <div className="grid gap-5 md:col-span-2 md:grid-cols-2">
+                        <label className="group flex min-h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-border px-5 py-7 text-center transition-colors duration-500 hover:border-foreground/60">
+                          <span className="absolute sr-only">
+                            Stereo mix {requiresStereo ? "required" : "optional"}
+                          </span>
+                          {track.stereoFiles.length > 0 ? (
+                            <FileAudio
+                              aria-hidden="true"
+                              className="h-5 w-5 text-foreground"
+                              strokeWidth={1.25}
+                            />
+                          ) : (
+                            <Upload
+                              aria-hidden="true"
+                              className="h-5 w-5 text-muted-foreground"
+                              strokeWidth={1.25}
+                            />
+                          )}
+                          <span className="mt-4 text-[10px] uppercase tracking-[0.2em]">
+                            {track.stereoFiles.length > 0 ? track.stereoFiles[0] : "Choose stereo mix"}
+                          </span>
+                          <span className="mt-2 text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
+                            {track.audioDelivery ? (requiresStereo ? "Required" : "Optional") : "Select above"}
+                          </span>
+                          <span className="mt-2 text-[10px] text-muted-foreground">WAV, AIFF or FLAC</span>
+                          <input
+                            type="file"
+                            name={`track-${track.id}-stereo`}
+                            accept="audio/*,.wav,.aiff,.aif,.flac"
+                            required={currentStep === 3 && requiresStereo}
+                            className="sr-only"
+                            onChange={(event) =>
+                              updateTrackFiles(track.id, "stereoFiles", event.target.files)
+                            }
+                          />
+                        </label>
+
+                        <label className="group flex min-h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-border px-5 py-7 text-center transition-colors duration-500 hover:border-foreground/60">
+                          <span className="absolute sr-only">
+                            Audio stems {requiresStems ? "required" : "optional"}
+                          </span>
+                          {track.stemFiles.length > 0 ? (
+                            <FileAudio
+                              aria-hidden="true"
+                              className="h-5 w-5 text-foreground"
+                              strokeWidth={1.25}
+                            />
+                          ) : (
+                            <Upload
+                              aria-hidden="true"
+                              className="h-5 w-5 text-muted-foreground"
+                              strokeWidth={1.25}
+                            />
+                          )}
+                          <span className="mt-4 text-[10px] uppercase tracking-[0.2em]">
+                            {track.stemFiles.length > 0
+                              ? `${track.stemFiles.length} stem file${track.stemFiles.length === 1 ? "" : "s"} selected`
+                              : "Choose audio stems"}
+                          </span>
+                          <span className="mt-2 text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
+                            {track.audioDelivery ? (requiresStems ? "Required" : "Optional") : "Select above"}
+                          </span>
+                          <span className="mt-2 max-w-xs text-[10px] leading-4 text-muted-foreground">
+                            Select multiple files or one ZIP archive
+                          </span>
+                          <input
+                            type="file"
+                            name={`track-${track.id}-stems`}
+                            accept="audio/*,.wav,.aiff,.aif,.flac,.zip"
+                            multiple
+                            required={currentStep === 3 && requiresStems}
+                            className="sr-only"
+                            onChange={(event) =>
+                              updateTrackFiles(track.id, "stemFiles", event.target.files)
+                            }
+                          />
+                        </label>
+                      </div>
+
+                      {requiresStereo && (
+                        <fieldset className="animate-fade-up md:col-span-2">
+                          <legend className={labelClassName}>Stereo mix status</legend>
+                          <div className="mt-3 grid border border-border md:grid-cols-3">
+                            {stereoStatusOptions.map((option) => (
+                              <label
+                                key={option.id}
+                                className={`cursor-pointer border-b border-border px-4 py-4 text-[9px] uppercase tracking-[0.16em] transition-colors duration-300 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0 ${
+                                  track.stereoStatus === option.id
+                                    ? "bg-foreground text-background"
+                                    : "text-muted-foreground hover:text-foreground"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name={`track-${track.id}-stereo-status`}
+                                  value={option.id}
+                                  checked={track.stereoStatus === option.id}
+                                  required={currentStep === 3}
+                                  onChange={() => updateStereoStatus(track.id, option.id)}
+                                  className="sr-only"
+                                />
+                                {option.label}
+                              </label>
+                            ))}
+                          </div>
+                        </fieldset>
+                      )}
 
                       <label className={`md:col-span-2 ${labelClassName}`}>
                         Track-specific notes
@@ -554,7 +709,8 @@ const PortalNewRelease = () => {
                       </label>
                     </div>
                   </fieldset>
-                ))}
+                  );
+                })}
               </div>
 
               <button
