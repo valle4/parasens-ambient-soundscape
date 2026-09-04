@@ -361,7 +361,7 @@ const PortalNewRelease = () => {
                 Playlist / Brief
                 <input
                   name="playlistBrief"
-                  placeholder="Optional playlist, brief, or mood"
+                  placeholder="Optional playlist or brief"
                   className={fieldClassName}
                 />
               </label>
