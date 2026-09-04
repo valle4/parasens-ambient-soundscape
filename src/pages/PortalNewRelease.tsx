@@ -358,8 +358,12 @@ const PortalNewRelease = () => {
               </label>
 
               <label className={labelClassName}>
-                Playlist
-                <input name="playlist" placeholder="Optional playlist or mood" className={fieldClassName} />
+                Playlist / Brief
+                <input
+                  name="playlistBrief"
+                  placeholder="Optional playlist, brief, or mood"
+                  className={fieldClassName}
+                />
               </label>
 
               <label className={`md:col-span-2 ${labelClassName}`}>
