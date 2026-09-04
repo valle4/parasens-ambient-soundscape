@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { ArrowLeft, ArrowRight, ChevronDown, FileAudio, ImagePlus, LogOut, Plus, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronDown, FileAudio, ImagePlus, LogOut, Plus, Trash2, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 
 type ReleaseType = "Single" | "EP" | "Album";
@@ -43,6 +43,7 @@ const PortalNewRelease = () => {
   const [primaryArtist, setPrimaryArtist] = useState("");
   const [releaseTitle, setReleaseTitle] = useState("");
   const [parasensChoosesTitle, setParasensChoosesTitle] = useState(false);
+  const [wantsArtworkMaterial, setWantsArtworkMaterial] = useState(false);
   const [artworkName, setArtworkName] = useState("");
   const [tracks, setTracks] = useState<TrackDraft[]>([emptyTrack(1)]);
   const [nextTrackId, setNextTrackId] = useState(2);
@@ -387,35 +388,74 @@ const PortalNewRelease = () => {
               <p className="text-[9px] uppercase tracking-[0.28em] text-muted-foreground">02</p>
               <h2 className="mt-4 font-display text-2xl tracking-[-0.02em]">Artwork</h2>
               <p className="mt-4 max-w-xs text-xs font-light leading-5 text-muted-foreground">
-                Optional. Upload finished artwork or share the direction you have in mind.
+                You do not need to provide artwork.
               </p>
             </div>
 
-            <div className="grid gap-10 md:grid-cols-2">
-              <label className="group flex min-h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-border px-6 py-8 text-center transition-colors duration-500 hover:border-foreground/60">
-                <ImagePlus aria-hidden="true" className="h-5 w-5 text-muted-foreground" strokeWidth={1.25} />
-                <span className="mt-4 text-[10px] uppercase tracking-[0.2em]">
-                  {artworkName || "Choose artwork"}
-                </span>
-                <span className="mt-2 text-[10px] text-muted-foreground">JPG, PNG or PDF</span>
+            <div>
+              <label className="group flex cursor-pointer items-start gap-5 border border-border p-5 transition-colors duration-500 hover:border-foreground/50 md:p-7">
                 <input
-                  type="file"
-                  name="artwork"
-                  accept="image/jpeg,image/png,application/pdf"
+                  type="checkbox"
+                  name="provideArtworkMaterial"
+                  checked={wantsArtworkMaterial}
+                  onChange={(event) => {
+                    setWantsArtworkMaterial(event.target.checked);
+                    if (!event.target.checked) setArtworkName("");
+                  }}
                   className="sr-only"
-                  onChange={(event) => setArtworkName(event.target.files?.[0]?.name || "")}
                 />
+                <span
+                  aria-hidden="true"
+                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center border transition-colors duration-300 ${
+                    wantsArtworkMaterial
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-muted-foreground/60 group-hover:border-foreground"
+                  }`}
+                >
+                  {wantsArtworkMaterial && <Check className="h-3 w-3" strokeWidth={2} />}
+                </span>
+                <span>
+                  <span className="block text-[10px] uppercase tracking-[0.2em] text-foreground">
+                    I want to submit artwork or visual references
+                  </span>
+                  <span className="mt-2 block text-xs font-light leading-5 text-muted-foreground">
+                    If you already have artwork or visual ideas, you can share them here.
+                  </span>
+                </span>
               </label>
 
-              <label className={labelClassName}>
-                Artwork inspiration
-                <textarea
-                  name="artworkInspiration"
-                  rows={6}
-                  placeholder="Describe the visual direction or paste reference links"
-                  className={`${fieldClassName} resize-none leading-6`}
-                />
-              </label>
+              {wantsArtworkMaterial && (
+                <div className="mt-8 grid animate-fade-up gap-10 md:grid-cols-2">
+                  <label className="group flex min-h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-border px-6 py-8 text-center transition-colors duration-500 hover:border-foreground/60">
+                    <ImagePlus
+                      aria-hidden="true"
+                      className="h-5 w-5 text-muted-foreground"
+                      strokeWidth={1.25}
+                    />
+                    <span className="mt-4 text-[10px] uppercase tracking-[0.2em]">
+                      {artworkName || "Choose artwork or references"}
+                    </span>
+                    <span className="mt-2 text-[10px] text-muted-foreground">JPG, PNG or PDF</span>
+                    <input
+                      type="file"
+                      name="artwork"
+                      accept="image/jpeg,image/png,application/pdf"
+                      className="sr-only"
+                      onChange={(event) => setArtworkName(event.target.files?.[0]?.name || "")}
+                    />
+                  </label>
+
+                  <label className={labelClassName}>
+                    Artwork inspiration
+                    <textarea
+                      name="artworkInspiration"
+                      rows={6}
+                      placeholder="Describe the visual direction or paste reference links"
+                      className={`${fieldClassName} resize-none leading-6`}
+                    />
+                  </label>
+                </div>
+              )}
             </div>
           </div>
         </section>
