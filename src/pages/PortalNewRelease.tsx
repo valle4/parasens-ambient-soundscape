@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { ArrowLeft, ArrowRight, FileAudio, ImagePlus, LogOut, Plus, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, FileAudio, ImagePlus, LogOut, Plus, Trash2, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 
 type ReleaseType = "Single" | "EP" | "Album";
@@ -32,13 +32,16 @@ const formSteps: Array<{ id: FormStep; label: string }> = [
   { id: 3, label: "Tracks" },
 ];
 
+// TODO: Replace this prototype list with the artist names assigned to the signed-in account.
+const accountArtists: Array<{ id: string; name: string }> = [];
+
 const PortalNewRelease = () => {
   const [currentStep, setCurrentStep] = useState<FormStep>(1);
   const [furthestStep, setFurthestStep] = useState<FormStep>(1);
   const [releaseType, setReleaseType] = useState<ReleaseType>("Single");
+  const [artistSelection, setArtistSelection] = useState("");
   const [primaryArtist, setPrimaryArtist] = useState("");
   const [releaseTitle, setReleaseTitle] = useState("");
-  const [parasensChoosesArtist, setParasensChoosesArtist] = useState(false);
   const [parasensChoosesTitle, setParasensChoosesTitle] = useState(false);
   const [artworkName, setArtworkName] = useState("");
   const [tracks, setTracks] = useState<TrackDraft[]>([emptyTrack(1)]);
@@ -107,6 +110,9 @@ const PortalNewRelease = () => {
       : currentStep === 2
         ? "Continue to tracks"
         : "Continue to review";
+
+  const isCustomArtist = artistSelection === "custom";
+  const parasensChoosesArtist = artistSelection === "parasens";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background px-6 py-6 text-foreground md:px-12 md:py-8 lg:px-24">
@@ -220,38 +226,58 @@ const PortalNewRelease = () => {
 
             <div className="grid gap-x-10 gap-y-10 md:grid-cols-2">
               <div>
-                <div className="flex items-center justify-between gap-4">
-                  <label htmlFor="primary-artist" className={labelClassName}>
-                    Primary artist
-                  </label>
-                  <button
-                    type="button"
-                    aria-pressed={parasensChoosesArtist}
-                    onClick={() => setParasensChoosesArtist((current) => !current)}
-                    className={`shrink-0 border-b pb-1 text-[8px] uppercase tracking-[0.16em] transition-colors duration-300 ${
-                      parasensChoosesArtist
-                        ? "border-foreground text-foreground"
-                        : "border-border text-muted-foreground hover:border-foreground/60 hover:text-foreground"
-                    }`}
+                <label htmlFor="primary-artist-selection" className={labelClassName}>
+                  Primary artist
+                </label>
+                <div className="relative">
+                  <select
+                    id="primary-artist-selection"
+                    name="primaryArtistSelection"
+                    required={currentStep === 1}
+                    value={artistSelection}
+                    onChange={(event) => setArtistSelection(event.target.value)}
+                    className={`${fieldClassName} appearance-none pr-10 text-muted-foreground focus:text-foreground`}
                   >
-                    {parasensChoosesArtist ? "PARASENS will decide" : "Ask PARASENS to decide"}
-                  </button>
+                    <option value="" disabled>
+                      Choose an artist
+                    </option>
+                    {accountArtists.map((artist) => (
+                      <option key={artist.id} value={artist.id}>
+                        {artist.name}
+                      </option>
+                    ))}
+                    <option value="custom">Enter another artist name</option>
+                    <option value="parasens">Ask PARASENS to decide</option>
+                  </select>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/4 text-muted-foreground"
+                    strokeWidth={1.25}
+                  />
                 </div>
-                <input
-                  id="primary-artist"
-                  name="primaryArtist"
-                  required={currentStep === 1 && !parasensChoosesArtist}
-                  disabled={parasensChoosesArtist}
-                  value={parasensChoosesArtist ? "" : primaryArtist}
-                  onChange={(event) => setPrimaryArtist(event.target.value)}
-                  placeholder={parasensChoosesArtist ? "PARASENS will propose the artist name" : "Artist name"}
-                  className={`${fieldClassName} disabled:cursor-not-allowed disabled:text-muted-foreground`}
-                />
-                <input
-                  type="hidden"
-                  name="primaryArtistDecision"
-                  value={parasensChoosesArtist ? "parasens" : "artist"}
-                />
+
+                {isCustomArtist && (
+                  <div className="mt-6 animate-fade-up">
+                    <label htmlFor="primary-artist-custom" className={labelClassName}>
+                      Enter artist name
+                    </label>
+                    <input
+                      id="primary-artist-custom"
+                      name="primaryArtist"
+                      required={currentStep === 1}
+                      value={primaryArtist}
+                      onChange={(event) => setPrimaryArtist(event.target.value)}
+                      placeholder="Artist name"
+                      className={fieldClassName}
+                    />
+                  </div>
+                )}
+
+                {parasensChoosesArtist && (
+                  <p className="mt-4 text-xs font-light leading-5 text-muted-foreground">
+                    PARASENS will propose the artist name before the release is submitted.
+                  </p>
+                )}
               </div>
 
               <div>
