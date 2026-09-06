@@ -12,6 +12,7 @@ const navItems = [
   { label: "Music", href: "#music" },
   { label: "About", href: "#about" },
   { label: "Contact", href: "#contact" },
+  { label: "Artist Portal", href: "/portal" },
 ];
 
 const Navigation = () => {
