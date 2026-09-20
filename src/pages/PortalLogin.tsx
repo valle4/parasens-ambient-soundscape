@@ -1,11 +1,62 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+import { supabase, portalCallbackUrl } from "@/lib/supabase";
+import { isHiddenInvitationError } from "@/lib/portal-auth-links";
+import { usePortalAuth } from "@/contexts/portal-auth";
 
 const PortalLogin = () => {
   const [email, setEmail] = useState("");
   const [submittedEmail, setSubmittedEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+  const inFlight = useRef(false);
+  const { user, loading, error: sessionError } = usePortalAuth();
+
+  useEffect(() => {
+    if (!cooldown) return;
+    const timer = window.setTimeout(() => setCooldown((current) => Math.max(0, current - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [cooldown]);
+
+  const requestLink = async (address: string) => {
+    if (inFlight.current || cooldown > 0) return;
+    if (!supabase) {
+      setError("Sign-in is being set up. Please try again soon.");
+      return;
+    }
+    inFlight.current = true;
+    setPending(true);
+    setError("");
+    try {
+      const { error: requestError } = await supabase.auth.signInWithOtp({
+        email: address,
+        options: { shouldCreateUser: false, emailRedirectTo: portalCallbackUrl() },
+      });
+
+      // Give invited and unknown addresses the same response. Public registration
+      // must also be disabled in Supabase; a browser option alone cannot enforce it.
+      if (requestError && !isHiddenInvitationError(requestError.code)) {
+        if (requestError.status === 429) {
+          setCooldown(60);
+          setError("Please wait a minute before requesting another link.");
+        } else {
+          setError("We couldn’t request a sign-in link. Please try again shortly.");
+        }
+        return;
+      }
+      setSubmittedEmail(address);
+      setIsSubmitted(true);
+      setCooldown(60);
+    } catch {
+      setError("We couldn’t connect. Please check your internet connection and try again.");
+    } finally {
+      inFlight.current = false;
+      setPending(false);
+    }
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -13,15 +64,17 @@ const PortalLogin = () => {
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) return;
 
-    setSubmittedEmail(normalizedEmail);
-    setIsSubmitted(true);
+    void requestLink(normalizedEmail);
   };
 
   const resetForm = () => {
     setIsSubmitted(false);
     setEmail("");
     setSubmittedEmail("");
+    setError("");
   };
+
+  if (user && !loading) return <Navigate to="/portal/dashboard" replace />;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background px-6 py-6 text-foreground md:px-12 md:py-8 lg:px-24">
@@ -52,7 +105,7 @@ const PortalLogin = () => {
                   Enter the email address connected to your invitation. We’ll send you a secure sign-in link.
                 </p>
 
-                <form onSubmit={handleSubmit} className="mt-12">
+                <form onSubmit={handleSubmit} className="mt-12" aria-busy={pending}>
                   <label
                     htmlFor="portal-email"
                     className="block text-[10px] uppercase tracking-[0.25em] text-muted-foreground"
@@ -66,6 +119,7 @@ const PortalLogin = () => {
                     inputMode="email"
                     autoComplete="email"
                     required
+                    disabled={pending}
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="artist@example.com"
@@ -74,9 +128,10 @@ const PortalLogin = () => {
 
                   <button
                     type="submit"
-                    className="group mt-10 flex w-full items-center justify-between border border-foreground px-6 py-4 text-left text-xs uppercase tracking-[0.2em] transition-all duration-500 hover:bg-foreground hover:text-background"
+                    disabled={pending || cooldown > 0 || loading || !supabase}
+                    className="group mt-10 flex w-full items-center justify-between border border-foreground px-6 py-4 text-left text-xs uppercase tracking-[0.2em] transition-all duration-500 hover:bg-foreground hover:text-background disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <span>Send secure link</span>
+                    <span>{pending ? "Sending…" : cooldown > 0 ? `Try again in ${cooldown}s` : "Send secure link"}</span>
                     <ArrowRight
                       aria-hidden="true"
                       className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-1"
@@ -84,6 +139,8 @@ const PortalLogin = () => {
                     />
                   </button>
                 </form>
+
+                {(error || sessionError || !supabase) && <p role="alert" className="mt-5 text-sm leading-6 text-muted-foreground">{error || sessionError || "Sign-in is being set up. Please try again soon."}</p>}
 
                 <p className="mt-8 text-xs leading-5 text-muted-foreground/70">
                   Access is by invitation only. If you need help, contact your PARASENS representative.
@@ -104,21 +161,26 @@ const PortalLogin = () => {
                   If <span className="text-foreground">{submittedEmail}</span> has an invitation, a secure sign-in link will arrive shortly.
                 </p>
 
-                <Link
-                  to="/portal/dashboard"
-                  className="group mt-10 flex w-full items-center justify-between border border-foreground px-6 py-4 text-xs uppercase tracking-[0.2em] transition-all duration-500 hover:bg-foreground hover:text-background"
+                <button
+                  type="button"
+                  onClick={() => void requestLink(submittedEmail)}
+                  disabled={pending || cooldown > 0}
+                  className="group mt-10 flex w-full items-center justify-between border border-foreground px-6 py-4 text-xs uppercase tracking-[0.2em] transition-all duration-500 hover:bg-foreground hover:text-background disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span>Open dashboard preview</span>
+                  <span>{pending ? "Sending…" : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend secure link"}</span>
                   <ArrowRight
                     aria-hidden="true"
                     className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-1"
                     strokeWidth={1.5}
                   />
-                </Link>
+                </button>
+
+                {error && <p role="alert" className="mt-5 text-sm leading-6 text-muted-foreground">{error}</p>}
 
                 <button
                   type="button"
                   onClick={resetForm}
+                  disabled={pending}
                   className="group mt-7 inline-flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-muted-foreground transition-colors duration-500 hover:text-foreground"
                 >
                   <ArrowLeft
@@ -130,7 +192,7 @@ const PortalLogin = () => {
                 </button>
 
                 <p className="mt-12 border-t border-border pt-6 text-[11px] leading-5 text-muted-foreground/60">
-                  Prototype only — no email has been sent.
+                  Check your spam folder too. Each link can only be used once.
                 </p>
             </div>
           )}

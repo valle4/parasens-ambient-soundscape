@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ArrowRight, Check, Clock3, FileEdit, LogOut, Plus } from "lucide-react";
+import { ArrowRight, Check, Clock3, FileEdit, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
+import PortalSignOut from "@/components/portal/PortalSignOut";
 
 type CatalogueTab = "drafts" | "submitted" | "accepted";
 
@@ -111,13 +112,7 @@ const PortalDashboard = () => {
             Artist portal
           </span>
           <span className="hidden h-4 w-px bg-border sm:block" />
-          <Link
-            to="/portal"
-            className="group inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted-foreground transition-colors duration-500 hover:text-foreground"
-          >
-            Sign out
-            <LogOut aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.5} />
-          </Link>
+          <PortalSignOut />
         </div>
       </header>
 

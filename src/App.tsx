@@ -8,6 +8,9 @@ import NotFound from "./pages/NotFound";
 import PortalLogin from "./pages/PortalLogin";
 import PortalDashboard from "./pages/PortalDashboard";
 import PortalNewRelease from "./pages/PortalNewRelease";
+import PortalAuthConfirm from "./pages/PortalAuthConfirm";
+import PortalAuthProvider from "./components/portal/PortalAuthProvider";
+import RequirePortalAuth from "./components/portal/RequirePortalAuth";
 import CustomCursor from "./components/CustomCursor";
 import MouseSpotlight from "./components/MouseSpotlight";
 
@@ -31,10 +34,15 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/portal" element={<PortalLogin />} />
-          <Route path="/portal/login" element={<PortalLogin />} />
-          <Route path="/portal/dashboard" element={<PortalDashboard />} />
-          <Route path="/portal/releases/new" element={<PortalNewRelease />} />
+          <Route path="/portal" element={<PortalAuthProvider />}>
+            <Route index element={<PortalLogin />} />
+            <Route path="login" element={<PortalLogin />} />
+            <Route path="auth/confirm" element={<PortalAuthConfirm />} />
+            <Route element={<RequirePortalAuth />}>
+              <Route path="dashboard" element={<PortalDashboard />} />
+              <Route path="releases/new" element={<PortalNewRelease />} />
+            </Route>
+          </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
