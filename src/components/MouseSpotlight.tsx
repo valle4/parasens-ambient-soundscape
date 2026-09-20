@@ -1,45 +1,56 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef } from "react";
 
 const MouseSpotlight = () => {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isVisible, setIsVisible] = useState(false);
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    // Use requestAnimationFrame for smooth performance
-    requestAnimationFrame(() => {
-      setPosition({ x: e.clientX, y: e.clientY });
-    });
-    if (!isVisible) setIsVisible(true);
-  }, [isVisible]);
-
+  const spotlight = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    // Check for reduced motion preference
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    // Check for touch device
-    if ('ontouchstart' in window) return;
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseleave", () => setIsVisible(false));
-    window.addEventListener("mouseenter", () => setIsVisible(true));
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
+    const enabled = window.matchMedia(
+      "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
+    );
+    let stop = () => {};
+    const setup = () => {
+      stop();
+      if (!enabled.matches) return;
+      const element = spotlight.current!;
+      let frame = 0;
+      let x = 0;
+      let y = 0;
+      const move = (event: PointerEvent) => {
+        x = event.clientX;
+        y = event.clientY;
+        if (frame) return;
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          element.style.transform = `translate3d(${x - 300}px, ${y - 300}px, 0)`;
+          element.style.opacity = "1";
+        });
+      };
+      const hide = () => {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        element.style.opacity = "0";
+      };
+      const out = (event: PointerEvent) => {
+        if (!event.relatedTarget) hide();
+      };
+      window.addEventListener("pointermove", move, { passive: true });
+      window.addEventListener("pointerout", out);
+      window.addEventListener("blur", hide);
+      stop = () => {
+        hide();
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerout", out);
+        window.removeEventListener("blur", hide);
+      };
     };
-  }, [handleMouseMove]);
+    setup();
+    enabled.addEventListener("change", setup);
+    return () => {
+      stop();
+      enabled.removeEventListener("change", setup);
+    };
+  }, []);
 
-  if (typeof window !== 'undefined' && 'ontouchstart' in window) {
-    return null;
-  }
-
-  return (
-    <div
-      className="pointer-events-none fixed inset-0 z-[1] transition-opacity duration-500"
-      style={{
-        opacity: isVisible ? 1 : 0,
-        background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, hsla(260, 50%, 30%, 0.08), transparent 40%)`,
-      }}
-    />
-  );
+  return <div ref={spotlight} aria-hidden="true" className="mouse-spotlight" />;
 };
 
 export default MouseSpotlight;

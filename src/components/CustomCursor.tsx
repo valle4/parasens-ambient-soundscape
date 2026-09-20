@@ -1,101 +1,95 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef } from "react";
+
+const interactive =
+  'a, button, [role="button"], input, textarea, select, .cursor-hover';
 
 const CustomCursor = () => {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isHovering, setIsHovering] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const [isClicking, setIsClicking] = useState(false);
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    setPosition({ x: e.clientX, y: e.clientY });
-    if (!isVisible) setIsVisible(true);
-  }, [isVisible]);
-
-  const handleMouseEnter = useCallback(() => setIsVisible(true), []);
-  const handleMouseLeave = useCallback(() => setIsVisible(false), []);
-  const handleMouseDown = useCallback(() => setIsClicking(true), []);
-  const handleMouseUp = useCallback(() => setIsClicking(false), []);
+  const ring = useRef<HTMLDivElement>(null);
+  const dot = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Check for touch device
-    if ('ontouchstart' in window) return;
-
-    const interactiveElements = document.querySelectorAll(
-      'a, button, [role="button"], input, textarea, select, .cursor-hover'
+    const enabled = window.matchMedia(
+      "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
     );
-
-    const handleHoverStart = () => setIsHovering(true);
-    const handleHoverEnd = () => setIsHovering(false);
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseenter", handleMouseEnter);
-    window.addEventListener("mouseleave", handleMouseLeave);
-    window.addEventListener("mousedown", handleMouseDown);
-    window.addEventListener("mouseup", handleMouseUp);
-
-    interactiveElements.forEach((el) => {
-      el.addEventListener("mouseenter", handleHoverStart);
-      el.addEventListener("mouseleave", handleHoverEnd);
-    });
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseenter", handleMouseEnter);
-      window.removeEventListener("mouseleave", handleMouseLeave);
-      window.removeEventListener("mousedown", handleMouseDown);
-      window.removeEventListener("mouseup", handleMouseUp);
-
-      interactiveElements.forEach((el) => {
-        el.removeEventListener("mouseenter", handleHoverStart);
-        el.removeEventListener("mouseleave", handleHoverEnd);
-      });
+    let stop = () => {};
+    const setup = () => {
+      stop();
+      if (!enabled.matches) return;
+      const elements = [ring.current!, dot.current!];
+      let frame = 0;
+      let x = 0;
+      let y = 0;
+      const visible = (show: boolean) =>
+        elements.forEach((el) => {
+          el.style.opacity = show ? "1" : "0";
+        });
+      const hover = (target: EventTarget | null) => {
+        const active =
+          target instanceof Element && Boolean(target.closest(interactive));
+        elements.forEach((el) => el.classList.toggle("hovering", active));
+      };
+      const move = (event: PointerEvent) => {
+        x = event.clientX;
+        y = event.clientY;
+        if (frame) return;
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          elements.forEach((el) => {
+            el.style.translate = `${x}px ${y}px`;
+          });
+          visible(true);
+        });
+      };
+      // Delegation handles newly imported rows without per-element listeners.
+      const over = (event: PointerEvent) => hover(event.target);
+      const out = (event: PointerEvent) => {
+        hover(event.relatedTarget);
+        if (!event.relatedTarget) {
+          cancelAnimationFrame(frame);
+          frame = 0;
+          visible(false);
+        }
+      };
+      const down = () => elements.forEach((el) => el.classList.add("clicking"));
+      const up = () =>
+        elements.forEach((el) => el.classList.remove("clicking"));
+      const blur = () => {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        visible(false);
+        up();
+      };
+      document.documentElement.classList.add("custom-cursor-active");
+      window.addEventListener("pointermove", move, { passive: true });
+      window.addEventListener("pointerover", over);
+      window.addEventListener("pointerout", out);
+      window.addEventListener("pointerdown", down);
+      window.addEventListener("pointerup", up);
+      window.addEventListener("blur", blur);
+      stop = () => {
+        cancelAnimationFrame(frame);
+        visible(false);
+        document.documentElement.classList.remove("custom-cursor-active");
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerover", over);
+        window.removeEventListener("pointerout", out);
+        window.removeEventListener("pointerdown", down);
+        window.removeEventListener("pointerup", up);
+        window.removeEventListener("blur", blur);
+      };
     };
-  }, [handleMouseMove, handleMouseEnter, handleMouseLeave, handleMouseDown, handleMouseUp]);
-
-  // Re-attach listeners when DOM changes
-  useEffect(() => {
-    if ('ontouchstart' in window) return;
-
-    const observer = new MutationObserver(() => {
-      const interactiveElements = document.querySelectorAll(
-        'a, button, [role="button"], input, textarea, select, .cursor-hover'
-      );
-
-      interactiveElements.forEach((el) => {
-        el.addEventListener("mouseenter", () => setIsHovering(true));
-        el.addEventListener("mouseleave", () => setIsHovering(false));
-      });
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
+    setup();
+    enabled.addEventListener("change", setup);
+    return () => {
+      stop();
+      enabled.removeEventListener("change", setup);
+    };
   }, []);
-
-  // Don't render on touch devices
-  if (typeof window !== 'undefined' && 'ontouchstart' in window) {
-    return null;
-  }
 
   return (
     <>
-      {/* Outer ring */}
-      <div
-        className={`custom-cursor-ring ${isHovering ? 'hovering' : ''} ${isClicking ? 'clicking' : ''}`}
-        style={{
-          left: position.x,
-          top: position.y,
-          opacity: isVisible ? 1 : 0,
-        }}
-      />
-      {/* Inner dot */}
-      <div
-        className={`custom-cursor-dot ${isHovering ? 'hovering' : ''} ${isClicking ? 'clicking' : ''}`}
-        style={{
-          left: position.x,
-          top: position.y,
-          opacity: isVisible ? 1 : 0,
-        }}
-      />
+      <div ref={ring} aria-hidden="true" className="custom-cursor-ring" />
+      <div ref={dot} aria-hidden="true" className="custom-cursor-dot" />
     </>
   );
 };

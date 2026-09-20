@@ -403,13 +403,17 @@
 
 /* Custom Cursor Styles */
 @media (hover: hover) and (pointer: fine) {
-  * {
+  .custom-cursor-active, .custom-cursor-active * {
     cursor: none !important;
   }
 }
 
 .custom-cursor-dot {
   position: fixed;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  will-change: translate;
   width: 6px;
   height: 6px;
   background: hsl(var(--foreground));
@@ -432,6 +436,10 @@
 
 .custom-cursor-ring {
   position: fixed;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  will-change: translate;
   width: 36px;
   height: 36px;
   border: 1px solid hsl(var(--foreground) / 0.4);
@@ -491,4 +499,35 @@
 
 .track-row:hover::before {
   opacity: 1;
+}
+
+/* Move a small, cached gradient instead of repainting the entire viewport. */
+.mouse-spotlight {
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 600px;
+  height: 600px;
+  z-index: 1;
+  opacity: 0;
+  background: radial-gradient(circle closest-side, hsla(260, 50%, 30%, 0.08), transparent 80%);
+  will-change: transform;
+  transition: opacity 200ms;
+}
+
+.public-track {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 81px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .scroll-reveal { opacity: 1; transform: none; }
 }

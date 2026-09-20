@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Play, ChevronUp, MousePointerClick } from "lucide-react";
 import useScrollReveal from "@/hooks/useScrollReveal";
 
@@ -47,32 +47,41 @@ const MusicPlayer = () => {
         }))
       : [];
   const scope = selectedSubCategory ?? genreId;
-  const filteredTracks = liveLibrary
-    ? data
-      ? tracksInScope(data, scope ?? "all", true).map((t) => ({
-          ...t,
-          spotifyId: t.id,
-          subCategory: data.tags
-            .filter((tag) => tag.track_id === t.id)
-            .map(
-              (tag) =>
-                data.categories.find((c) => c.id === tag.category_id)?.name,
+  const labelsByTrack = useMemo(() => {
+    const categories = new Map(data?.categories.map((c) => [c.id, c.name]));
+    const labels = new Map<string, string[]>();
+    for (const tag of data?.tags ?? []) {
+      const name = categories.get(tag.category_id);
+      if (!name) continue;
+      const names = labels.get(tag.track_id) ?? [];
+      names.push(name);
+      labels.set(tag.track_id, names);
+    }
+    return labels;
+  }, [data]);
+  const filteredTracks = useMemo(
+    () =>
+      liveLibrary
+        ? data
+          ? tracksInScope(data, scope ?? "all", true).map((t) => ({
+              ...t,
+              spotifyId: t.id,
+              subCategory: labelsByTrack.get(t.id)?.join(" · ") ?? "",
+            }))
+          : []
+        : legacyTracks
+            .filter(
+              (t) =>
+                (selectedGenre === "All" || t.genre === selectedGenre) &&
+                (!selectedSubCategory || t.subCategory === selectedSubCategory),
             )
-            .filter(Boolean)
-            .join(" · "),
-        }))
-      : []
-    : legacyTracks
-        .filter(
-          (t) =>
-            (selectedGenre === "All" || t.genre === selectedGenre) &&
-            (!selectedSubCategory || t.subCategory === selectedSubCategory),
-        )
-        .map((t) => ({
-          ...t,
-          id: t.spotifyId.split("?")[0],
-          spotifyId: t.spotifyId.split("?")[0],
-        }));
+            .map((t) => ({
+              ...t,
+              id: t.spotifyId.split("?")[0],
+              spotifyId: t.spotifyId.split("?")[0],
+            })),
+    [data, scope, labelsByTrack, selectedGenre, selectedSubCategory],
+  );
 
   const handleGenreSelect = (genre: string) => {
     setSelectedGenre(genre);
@@ -181,7 +190,7 @@ const MusicPlayer = () => {
             {filteredTracks.map((track, index) => (
               <div
                 key={track.id}
-                className="border-b border-border/50 last:border-b-0"
+                className="public-track border-b border-border/50 last:border-b-0"
               >
                 {/* Track Row */}
                 <button
