@@ -657,8 +657,6 @@ export default function PortalMusicLibrary() {
                             <InlineTrackPlayer
                               id={track.id}
                               title={track.title}
-                              busy={busy}
-                              onEditGenres={() => startTagging(track.id)}
                               onClose={() => setPlaying(null)}
                             />
                           </td>

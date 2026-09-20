@@ -1,17 +1,13 @@
-import { Tag, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function InlineTrackPlayer({
   id,
   title,
-  busy,
-  onEditGenres,
   onClose,
 }: {
   id: string;
   title: string;
-  busy: boolean;
-  onEditGenres: () => void;
   onClose: () => void;
 }) {
   return (
@@ -25,14 +21,6 @@ export default function InlineTrackPlayer({
           Listen while you choose genres.
         </p>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={busy}
-            onClick={onEditGenres}
-          >
-            <Tag className="mr-2 h-3 w-3" /> Edit genres
-          </Button>
           <Button
             size="icon"
             variant="ghost"
