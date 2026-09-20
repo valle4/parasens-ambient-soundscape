@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
   ChevronUp,
-  ArrowUpToLine,
   GripVertical,
   ListMusic,
   Music2,
@@ -43,6 +42,8 @@ import {
   type MusicStatus,
   type MusicTrack,
 } from "@/lib/music/catalogue";
+import { useSongDrag } from "@/hooks/useSongDrag";
+
 const pageSize = 50;
 const selectStyle = "h-10 border border-input bg-background px-3 text-sm";
 
@@ -77,7 +78,6 @@ export default function PortalMusicLibrary() {
   const [playing, setPlaying] = useState<string | null>(null);
   const [moving, setMoving] = useState<MusicTrack | null>(null);
   const [position, setPosition] = useState(1);
-  const [dragging, setDragging] = useState<string | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     tableRef.current?.scrollTo({ top: 0 });
@@ -189,6 +189,17 @@ export default function PortalMusicLibrary() {
     )
       setMoving(null);
   };
+  const { dragging, dropTarget, startDrag, cancelDrag } = useSongDrag({
+    container: tableRef,
+    ids: ordered.map((track) => track.id),
+    enabled: canOrder && !busy && tab === "library",
+    onMove: (id, to) => {
+      void move(id, to);
+    },
+  });
+  useEffect(() => {
+    cancelDrag();
+  }, [page, scope, tab, cancelDrag]);
   const toggle = (id: string) =>
     setSelected((old) => {
       const next = new Set(old);
@@ -392,8 +403,8 @@ export default function PortalMusicLibrary() {
                 {filtered.length} songs
                 {status === "published"
                   ? canOrder
-                    ? " · Drag a handle or choose a position to reorder this view."
-                    : " · Clear search and playlist filters to reorder."
+                    ? " · Drag the grip beside a song to reorder. Drop to save."
+                    : " · Clear search, playlist and untagged filters to reorder."
                   : status === "archived"
                     ? " · Archived songs stay archived when playlists are imported again."
                     : " · Tag songs, then publish when ready."}
@@ -473,6 +484,7 @@ export default function PortalMusicLibrary() {
             )}
             <div
               ref={tableRef}
+              data-song-dragging={Boolean(dragging)}
               className="max-h-[65vh] overflow-auto border border-border"
             >
               <table className="w-full min-w-[650px] text-left text-sm">
@@ -499,7 +511,7 @@ export default function PortalMusicLibrary() {
                         }
                       />
                     </th>
-                    <th className="w-16 py-4">Order</th>
+                    <th className="w-24 py-4">Order</th>
                     <th className="py-4">Song / Artist</th>
                     <th className="py-4">Genres</th>
                     <th className="p-4 text-right">Actions</th>
@@ -509,24 +521,13 @@ export default function PortalMusicLibrary() {
                   {visible.map((track, index) => (
                     <Fragment key={track.id}>
                       <tr
-                        className={`border-b border-border/70 hover:bg-foreground/[.025] ${selected.has(track.id) ? "bg-foreground/[.04]" : ""}`}
-                        onDragOver={(e) => {
-                          if (canOrder && !busy) e.preventDefault();
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (
-                            canOrder &&
-                            !busy &&
-                            dragging &&
-                            dragging !== track.id
-                          )
-                            void move(
-                              dragging,
-                              ordered.findIndex((t) => t.id === track.id) + 1,
-                            );
-                          setDragging(null);
-                        }}
+                        className={`border-b border-border/70 hover:bg-foreground/[.025] ${selected.has(track.id) ? "bg-foreground/[.04]" : ""} ${dragging === track.id ? "opacity-40" : ""}`}
+                        data-drop-edge={
+                          dropTarget?.id === track.id
+                            ? dropTarget.edge
+                            : undefined
+                        }
+                        data-song-row={track.id}
                       >
                         <td className="p-4">
                           <input
@@ -540,22 +541,28 @@ export default function PortalMusicLibrary() {
                         <td>
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             {canOrder && (
-                              <span
-                                draggable={!busy}
-                                onDragStart={(e) => {
-                                  setDragging(track.id);
-                                  e.dataTransfer.effectAllowed = "move";
-                                  e.dataTransfer.setData(
-                                    "text/plain",
-                                    track.id,
-                                  );
+                              <button
+                                type="button"
+                                data-song-drag-handle
+                                disabled={busy}
+                                aria-label={`Drag ${track.title} to reorder`}
+                                title="Drag to reorder. Use the position button to move between pages."
+                                onPointerDown={(e) =>
+                                  startDrag(e, track.id, track.title)
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    setMoving(track);
+                                    setPosition(
+                                      currentPage * pageSize + index + 1,
+                                    );
+                                  }
                                 }}
-                                onDragEnd={() => setDragging(null)}
-                                title="Drag to reorder"
-                                className="cursor-grab p-1"
+                                className="inline-flex h-9 w-9 shrink-0 touch-none select-none cursor-grab items-center justify-center rounded border border-border text-foreground/70 hover:bg-accent hover:text-foreground active:cursor-grabbing disabled:opacity-40"
                               >
-                                <GripVertical className="h-4 w-4" />
-                              </span>
+                                <GripVertical className="h-5 w-5" />
+                              </button>
                             )}
                             {currentPage * pageSize + index + 1}
                           </div>
@@ -627,16 +634,8 @@ export default function PortalMusicLibrary() {
                                   size="icon"
                                   variant="ghost"
                                   disabled={busy}
-                                  aria-label={`Move ${track.title} to top`}
-                                  onClick={() => void move(track.id, 1)}
-                                >
-                                  <ArrowUpToLine className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  disabled={busy}
                                   aria-label={`Choose position for ${track.title}`}
+                                  title="Choose an exact position, including on another page"
                                   onClick={() => {
                                     setMoving(track);
                                     setPosition(
