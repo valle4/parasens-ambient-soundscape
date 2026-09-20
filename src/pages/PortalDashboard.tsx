@@ -3,6 +3,8 @@ import { ArrowRight, Check, Clock3, FileEdit, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import PortalSignOut from "@/components/portal/PortalSignOut";
 
+import { useMusicAdmin } from "@/hooks/useMusicAdmin";
+
 type CatalogueTab = "drafts" | "submitted" | "accepted";
 
 type CatalogueItem = {
@@ -91,6 +93,7 @@ const tabIcons = {
 };
 
 const PortalDashboard = () => {
+  const musicAdmin = useMusicAdmin();
   const [activeTab, setActiveTab] = useState<CatalogueTab>("drafts");
   const activeItems = catalogue[activeTab];
 
@@ -115,6 +118,8 @@ const PortalDashboard = () => {
           <PortalSignOut />
         </div>
       </header>
+
+      {musicAdmin.data && <div className="relative z-10 mx-auto mt-8 flex max-w-6xl flex-wrap items-center justify-between gap-4 border border-border bg-foreground/[0.02] p-5"><div><p className="font-display text-lg">Music Library</p><p className="mt-1 text-xs text-muted-foreground">Import playlists, curate genres and publish songs to the website.</p></div><Link to="/portal/music" className="inline-flex items-center gap-4 border border-foreground px-5 py-3 text-xs">Manage music <ArrowRight className="h-4 w-4" /></Link></div>}
 
       <section className="relative z-10 mx-auto w-full max-w-6xl pb-20 pt-20 opacity-0 animate-fade-up animation-delay-200 md:pt-28">
         <div className="flex flex-col gap-10 md:flex-row md:items-end md:justify-between">

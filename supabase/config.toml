@@ -1,0 +1,5 @@
+project_id = "zsjcelwhipbwrwdzegdl"
+
+[functions.invite-music-admin]
+# JWT and verified owner role are checked inside the function using Auth getUser.
+verify_jwt = false

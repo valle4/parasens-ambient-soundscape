@@ -4,6 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { PortalAuthContext, type PortalAuthState } from "@/contexts/portal-auth";
 import { supabase } from "@/lib/supabase";
 
+import { disconnectSpotify } from "@/lib/music/spotify";
+
 const PortalAuthProvider = () => {
   const queryClient = useQueryClient();
   const [state, setState] = useState<PortalAuthState>({ user: null, loading: Boolean(supabase), error: "" });
@@ -19,7 +21,7 @@ const PortalAuthProvider = () => {
       const currentRevision = ++revision;
       clearTimeout(timer);
       if (!session) {
-        if (event === "SIGNED_OUT") queryClient.clear();
+        if (event === "SIGNED_OUT") { queryClient.clear(); disconnectSpotify(); }
         setState({ user: null, loading: false, error: "" });
         return;
       }

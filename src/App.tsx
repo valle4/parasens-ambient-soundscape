@@ -14,6 +14,11 @@ import RequirePortalAuth from "./components/portal/RequirePortalAuth";
 import CustomCursor from "./components/CustomCursor";
 import MouseSpotlight from "./components/MouseSpotlight";
 
+import { lazy, Suspense } from "react";
+const PortalMusicLibrary = lazy(() => import("./pages/PortalMusicLibrary"));
+import PortalSpotifyCallback from "./pages/PortalSpotifyCallback";
+import RequireMusicAdmin from "./components/portal/RequireMusicAdmin";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -21,14 +26,14 @@ const App = () => (
     <TooltipProvider>
       {/* Custom cursor */}
       <CustomCursor />
-      
+
       {/* Mouse spotlight effect */}
       <MouseSpotlight />
-      
+
       {/* Immersive background layers */}
       <div className="bg-orb-layer" />
       <div className="vignette" />
-      
+
       <Toaster />
       <Sonner />
       <BrowserRouter>
@@ -41,6 +46,26 @@ const App = () => (
             <Route element={<RequirePortalAuth />}>
               <Route path="dashboard" element={<PortalDashboard />} />
               <Route path="releases/new" element={<PortalNewRelease />} />
+              <Route element={<RequireMusicAdmin />}>
+                <Route
+                  path="music"
+                  element={
+                    <Suspense
+                      fallback={
+                        <main className="min-h-screen grid place-items-center">
+                          Loading Music Library…
+                        </main>
+                      }
+                    >
+                      <PortalMusicLibrary />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="music/spotify/callback"
+                  element={<PortalSpotifyCallback />}
+                />
+              </Route>
             </Route>
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
