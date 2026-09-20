@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 const interactive =
   'a, button, [role="button"], input, textarea, select, .cursor-hover';
@@ -28,7 +29,18 @@ const CustomCursor = () => {
           target instanceof Element && Boolean(target.closest(interactive));
         elements.forEach((el) => el.classList.toggle("hovering", active));
       };
+      const isFrame = (target: EventTarget | null) =>
+        target instanceof Element && target.matches("iframe");
+      const hide = () => {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        visible(false);
+      };
       const move = (event: PointerEvent) => {
+        if (isFrame(event.target)) {
+          hide();
+          return;
+        }
         x = event.clientX;
         y = event.clientY;
         if (frame) return;
@@ -44,11 +56,7 @@ const CustomCursor = () => {
       const over = (event: PointerEvent) => hover(event.target);
       const out = (event: PointerEvent) => {
         hover(event.relatedTarget);
-        if (!event.relatedTarget) {
-          cancelAnimationFrame(frame);
-          frame = 0;
-          visible(false);
-        }
+        if (!event.relatedTarget || isFrame(event.relatedTarget)) hide();
       };
       const down = () => elements.forEach((el) => el.classList.add("clicking"));
       const up = () =>
@@ -86,11 +94,13 @@ const CustomCursor = () => {
     };
   }, []);
 
-  return (
+  // Dialogs render beside the app root; the cursor must share that layer.
+  return createPortal(
     <>
       <div ref={ring} aria-hidden="true" className="custom-cursor-ring" />
       <div ref={dot} aria-hidden="true" className="custom-cursor-dot" />
-    </>
+    </>,
+    document.body,
   );
 };
 

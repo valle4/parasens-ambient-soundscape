@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
+  ChevronUp,
   ArrowUpToLine,
   GripVertical,
   ListMusic,
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import PortalSignOut from "@/components/portal/PortalSignOut";
 import PlaylistImports from "@/components/music/PlaylistImports";
+import InlineTrackPlayer from "@/components/music/InlineTrackPlayer";
 import CategoryManager from "@/components/music/CategoryManager";
 import MusicAdministrators from "@/components/music/MusicAdministrators";
 import { usePortalAuth } from "@/contexts/portal-auth";
@@ -79,7 +81,8 @@ export default function PortalMusicLibrary() {
   const tableRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     tableRef.current?.scrollTo({ top: 0 });
-  }, [page, status, scope, search, untagged, playlist]);
+    setPlaying(null);
+  }, [page, status, scope, search, untagged, playlist, tab]);
   const membership = useQuery({
     queryKey: ["music-playlist-members", playlist, user.id],
     enabled: Boolean(playlist),
@@ -504,127 +507,164 @@ export default function PortalMusicLibrary() {
                 </thead>
                 <tbody>
                   {visible.map((track, index) => (
-                    <tr
-                      key={track.id}
-                      className={`border-b border-border/70 hover:bg-foreground/[.025] ${selected.has(track.id) ? "bg-foreground/[.04]" : ""}`}
-                      onDragOver={(e) => {
-                        if (canOrder && !busy) e.preventDefault();
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (
-                          canOrder &&
-                          !busy &&
-                          dragging &&
-                          dragging !== track.id
-                        )
-                          void move(
-                            dragging,
-                            ordered.findIndex((t) => t.id === track.id) + 1,
-                          );
-                        setDragging(null);
-                      }}
-                    >
-                      <td className="p-4">
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${track.title}`}
-                          checked={selected.has(track.id)}
-                          disabled={busy}
-                          onChange={() => toggle(track.id)}
-                        />
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          {canOrder && (
-                            <span
-                              draggable={!busy}
-                              onDragStart={(e) => {
-                                setDragging(track.id);
-                                e.dataTransfer.effectAllowed = "move";
-                                e.dataTransfer.setData("text/plain", track.id);
-                              }}
-                              onDragEnd={() => setDragging(null)}
-                              title="Drag to reorder"
-                              className="cursor-grab p-1"
-                            >
-                              <GripVertical className="h-4 w-4" />
-                            </span>
-                          )}
-                          {currentPage * pageSize + index + 1}
-                        </div>
-                      </td>
-                      <td className="py-4 pr-4">
-                        <p className="font-medium">{track.title}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {track.artist}
-                        </p>
-                      </td>
-                      <td className="max-w-72 py-3 pr-3">
-                        <button
-                          disabled={busy}
-                          className="flex flex-wrap gap-1.5 text-left"
-                          aria-label={`Edit genres for ${track.title}`}
-                          onClick={() => startTagging(track.id)}
-                        >
-                          {(tagsByTrack.get(track.id) ?? []).map((id) => {
-                            const c = data.categories.find((c) => c.id === id);
-                            return c ? (
+                    <Fragment key={track.id}>
+                      <tr
+                        className={`border-b border-border/70 hover:bg-foreground/[.025] ${selected.has(track.id) ? "bg-foreground/[.04]" : ""}`}
+                        onDragOver={(e) => {
+                          if (canOrder && !busy) e.preventDefault();
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (
+                            canOrder &&
+                            !busy &&
+                            dragging &&
+                            dragging !== track.id
+                          )
+                            void move(
+                              dragging,
+                              ordered.findIndex((t) => t.id === track.id) + 1,
+                            );
+                          setDragging(null);
+                        }}
+                      >
+                        <td className="p-4">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${track.title}`}
+                            checked={selected.has(track.id)}
+                            disabled={busy}
+                            onChange={() => toggle(track.id)}
+                          />
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            {canOrder && (
                               <span
-                                key={id}
-                                className="border border-border px-2 py-1 text-[11px] text-muted-foreground"
-                              >
-                                {categoryLabel(c, data.categories)}
-                              </span>
-                            ) : null;
-                          })}
-                          {!tagsByTrack.has(track.id) && (
-                            <span className="border border-dashed border-border px-2 py-1 text-xs text-muted-foreground">
-                              + Add genre
-                            </span>
-                          )}
-                        </button>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            aria-label={`Listen to ${track.title}`}
-                            onClick={() => setPlaying(track.id)}
-                          >
-                            <Play className="h-4 w-4" />
-                          </Button>
-                          {canOrder && (
-                            <>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                disabled={busy}
-                                aria-label={`Move ${track.title} to top`}
-                                onClick={() => void move(track.id, 1)}
-                              >
-                                <ArrowUpToLine className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                disabled={busy}
-                                aria-label={`Choose position for ${track.title}`}
-                                onClick={() => {
-                                  setMoving(track);
-                                  setPosition(
-                                    currentPage * pageSize + index + 1,
+                                draggable={!busy}
+                                onDragStart={(e) => {
+                                  setDragging(track.id);
+                                  e.dataTransfer.effectAllowed = "move";
+                                  e.dataTransfer.setData(
+                                    "text/plain",
+                                    track.id,
                                   );
                                 }}
+                                onDragEnd={() => setDragging(null)}
+                                title="Drag to reorder"
+                                className="cursor-grab p-1"
                               >
-                                <ListMusic className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+                                <GripVertical className="h-4 w-4" />
+                              </span>
+                            )}
+                            {currentPage * pageSize + index + 1}
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4">
+                          <p className="font-medium">{track.title}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {track.artist}
+                          </p>
+                        </td>
+                        <td className="max-w-72 py-3 pr-3">
+                          <button
+                            disabled={busy}
+                            className="flex flex-wrap gap-1.5 text-left"
+                            aria-label={`Edit genres for ${track.title}`}
+                            onClick={() => startTagging(track.id)}
+                          >
+                            {(tagsByTrack.get(track.id) ?? []).map((id) => {
+                              const c = data.categories.find(
+                                (c) => c.id === id,
+                              );
+                              return c ? (
+                                <span
+                                  key={id}
+                                  className="border border-border px-2 py-1 text-[11px] text-muted-foreground"
+                                >
+                                  {categoryLabel(c, data.categories)}
+                                </span>
+                              ) : null;
+                            })}
+                            {!tagsByTrack.has(track.id) && (
+                              <span className="border border-dashed border-border px-2 py-1 text-xs text-muted-foreground">
+                                + Add genre
+                              </span>
+                            )}
+                          </button>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              aria-label={
+                                playing === track.id
+                                  ? `Hide player for ${track.title}`
+                                  : `Listen to ${track.title}`
+                              }
+                              aria-expanded={playing === track.id}
+                              aria-controls={
+                                playing === track.id
+                                  ? `preview-${track.id}`
+                                  : undefined
+                              }
+                              onClick={() =>
+                                setPlaying((current) =>
+                                  current === track.id ? null : track.id,
+                                )
+                              }
+                            >
+                              {playing === track.id ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <Play className="h-4 w-4" />
+                              )}
+                            </Button>
+                            {canOrder && (
+                              <>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  disabled={busy}
+                                  aria-label={`Move ${track.title} to top`}
+                                  onClick={() => void move(track.id, 1)}
+                                >
+                                  <ArrowUpToLine className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  disabled={busy}
+                                  aria-label={`Choose position for ${track.title}`}
+                                  onClick={() => {
+                                    setMoving(track);
+                                    setPosition(
+                                      currentPage * pageSize + index + 1,
+                                    );
+                                  }}
+                                >
+                                  <ListMusic className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                      {playing === track.id && (
+                        <tr className="border-b border-border bg-foreground/[.02]">
+                          <td colSpan={5}>
+                            <InlineTrackPlayer
+                              id={track.id}
+                              title={track.title}
+                              busy={busy}
+                              onEditGenres={() => startTagging(track.id)}
+                              onClose={() => setPlaying(null)}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
@@ -813,30 +853,6 @@ export default function PortalMusicLibrary() {
             />
             <Button disabled={busy}>Save position</Button>
           </form>
-        </DialogContent>
-      </Dialog>
-      <Dialog
-        open={Boolean(playing)}
-        onOpenChange={(v) => {
-          if (!v) setPlaying(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Listen on Spotify</DialogTitle>
-            <DialogDescription>
-              Preview the song before choosing its place in the library.
-            </DialogDescription>
-          </DialogHeader>
-          {playing && (
-            <iframe
-              title="Spotify song player"
-              src={`https://open.spotify.com/embed/track/${playing}?theme=0`}
-              width="100%"
-              height="152"
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            />
-          )}
         </DialogContent>
       </Dialog>
     </main>

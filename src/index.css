@@ -406,6 +406,10 @@
   .custom-cursor-active, .custom-cursor-active * {
     cursor: none !important;
   }
+  /* Embedded players own their pointer events and need the native cursor. */
+  .custom-cursor-active iframe {
+    cursor: auto !important;
+  }
 }
 
 .custom-cursor-dot {

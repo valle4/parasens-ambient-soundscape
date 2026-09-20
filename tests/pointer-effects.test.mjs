@@ -39,6 +39,9 @@ class Element {
   closest() {
     return this.interactive ? this : null;
   }
+  matches(selector) {
+    return this.tagName === selector;
+  }
 }
 async function mount(name, matches = true) {
   const refs = [],
@@ -46,7 +49,7 @@ async function mount(name, matches = true) {
     frames = new Map();
   const media = { ...target(), matches };
   const window = { ...target(), matchMedia: () => media };
-  const document = { documentElement: { classList: classes() } };
+  const document = { body: {}, documentElement: { classList: classes() } };
   let nextFrame = 0;
   const exports = {};
   const source = await readFile(
@@ -88,6 +91,13 @@ async function mount(name, matches = true) {
             throw new Error(
               "Pointer movement must not schedule React renders.",
             );
+          },
+        };
+      if (id === "react-dom")
+        return {
+          createPortal: (_children, container) => {
+            assert.equal(container, document.body);
+            return null;
           },
         };
       if (id === "react/jsx-runtime")
@@ -168,5 +178,27 @@ test("cursor delegation supports newly inserted controls without attaching new l
     assert.equal(app.refs[0].current.classList.values.has("hovering"), false);
   }
   assert.equal(app.window.count(), listeners);
+  app.unmount();
+});
+
+test("cursor yields to embedded players and resumes outside them", async () => {
+  const app = await mount("CustomCursor");
+  const iframe = new Element();
+  iframe.tagName = "iframe";
+  app.window.emit("pointermove", { clientX: 20, clientY: 30 });
+  app.flush();
+  app.window.emit("pointermove", { clientX: 21, clientY: 31 });
+  app.window.emit("pointerout", { relatedTarget: iframe });
+  assert.equal(app.frames.size, 0);
+  assert.equal(app.refs[0].current.style.opacity, "0");
+  app.window.emit("pointermove", { target: iframe, clientX: 22, clientY: 32 });
+  assert.equal(app.frames.size, 0);
+  app.window.emit("pointermove", {
+    target: new Element(),
+    clientX: 23,
+    clientY: 33,
+  });
+  app.flush();
+  assert.equal(app.refs[0].current.style.opacity, "1");
   app.unmount();
 });
