@@ -10,6 +10,8 @@ Both `portal-invitations` and `portal-admin` were deployed through the Supabase 
 
 Supabase calls its primary branch “main / Production”, but the Cloudflare project API was checked again: only Preview points to this Supabase project. Production has no environment variables, remains on branch `main`, and retains deployment `8354e450-f100-446f-b237-c03bfef05c7a`. The initial automated approval rejection of the function deployment was resolved using this fresh configuration evidence.
 
+Cloudflare development deployment `daa14753-3a96-436a-9631-93e827f73dc9` succeeded for implementation commit `a763d1ef31a02578d095b45273993cdf4ab4a631`. The development alias serves the new build, and a live browser check of `/portal/admin/submissions` correctly redirects signed-out visitors to sign-in. The live authenticated workspace and real email receipt remain for user verification.
+
 ## Behaviour and access
 
 - New → In Review → Accepted → manually Delivered. Declines require a reason. Request changes stays In Review with an awaiting-changes badge, cleared on resubmission.
