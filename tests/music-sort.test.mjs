@@ -31,6 +31,13 @@ test("genre sorting uses full category labels, first alphabetical tag and puts u
   assert.deepEqual(ids(sortTracks(tracks, "genre", categories, [...tags].reverse())), ["c", "b", "a", "d"]);
 });
 
+test("descending reverses alphabetic ordering while untagged genres stay last", () => {
+  assert.deepEqual(ids(sortTracks(tracks, "artist", categories, tags, "desc")), ["d", "b", "c", "a"]);
+  assert.deepEqual(ids(sortTracks(tracks, "song", categories, tags, "desc")), ["a", "b", "c", "d"]);
+  assert.deepEqual(ids(sortTracks(tracks, "genre", categories, tags, "desc")), ["a", "b", "c", "d"]);
+  assert.deepEqual(ids(sortTracks(tracks, "manual", categories, tags, "desc")), ["a", "b", "c", "d"]);
+});
+
 test("alphabetical views preserve manual sequences and apply within the filtered genre", () => {
   const data = { tracks, categories, tags, orders: [{ scope: "all", track_id: "d", position: 1 }] };
   const manual = tracksInScope(data, "all");

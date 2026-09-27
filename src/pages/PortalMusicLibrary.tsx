@@ -3,6 +3,9 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   ChevronUp,
   GripVertical,
   ListMusic,
@@ -44,6 +47,7 @@ import {
   sortTracks,
   tracksInScope,
   type MusicSort,
+  type MusicSortDirection,
   type MusicStatus,
   type MusicTrack,
 } from "@/lib/music/catalogue";
@@ -69,6 +73,11 @@ export default function PortalMusicLibrary() {
   const [status, setStatus] = useState<MusicStatus>("draft");
   const [scope, setScope] = useState("all");
   const [sort, setSort] = useState<MusicSort>("manual");
+  const [sortDirection, setSortDirection] = useState<MusicSortDirection>("asc");
+  const sortColumn = (column: MusicSort) => {
+    setSortDirection(sort === column && sortDirection === "asc" ? "desc" : "asc");
+    setSort(column);
+  };
   const [search, setSearch] = useState("");
   const [untagged, setUntagged] = useState(false);
   const [playlist, setPlaylist] = useState("");
@@ -88,7 +97,7 @@ export default function PortalMusicLibrary() {
   useEffect(() => {
     tableRef.current?.scrollTo({ top: 0 });
     setPlaying(null);
-  }, [page, status, scope, search, untagged, playlist, tab, sort]);
+  }, [page, status, scope, search, untagged, playlist, tab, sort, sortDirection]);
   const membership = useQuery({
     queryKey: ["music-playlist-members", playlist, user.id],
     enabled: Boolean(playlist),
@@ -110,7 +119,7 @@ export default function PortalMusicLibrary() {
   useEffect(() => {
     setPage(0);
     setSelected(new Set());
-  }, [status, scope, search, untagged, playlist, sort]);
+  }, [status, scope, search, untagged, playlist, sort, sortDirection]);
   const data = library.data;
   const tagsByTrack = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -142,8 +151,8 @@ export default function PortalMusicLibrary() {
   const lastPage = Math.max(0, Math.ceil(filtered.length / pageSize) - 1);
   const currentPage = Math.min(page, lastPage);
   const sorted = useMemo(
-    () => sortTracks(filtered, sort, data?.categories ?? [], data?.tags ?? []),
-    [filtered, sort, data?.categories, data?.tags],
+    () => sortTracks(filtered, sort, data?.categories ?? [], data?.tags ?? [], sortDirection),
+    [filtered, sort, sortDirection, data?.categories, data?.tags],
   );
   const visible = sorted.slice(
     currentPage * pageSize,
@@ -408,23 +417,6 @@ export default function PortalMusicLibrary() {
                 </label>
               </div>
             </div>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <span id="music-sort-label" className="text-[10px] uppercase tracking-widest text-muted-foreground">Sort by</span>
-              <Select value={sort} onValueChange={(value) => setSort(value as MusicSort)}>
-                <SelectTrigger aria-labelledby="music-sort-label" className="w-48 rounded-none">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-none">
-                  <SelectItem value="manual">Manual order</SelectItem>
-                  <SelectItem value="artist">Artist · A–Z</SelectItem>
-                  <SelectItem value="song">Song · A–Z</SelectItem>
-                  <SelectItem value="genre">Genre · A–Z</SelectItem>
-                </SelectContent>
-              </Select>
-              {sort === "genre" && (
-                <span className="text-xs text-muted-foreground">First genre alphabetically; untagged songs last.</span>
-              )}
-            </div>
             <div className="my-5 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
               <p>
                 {filtered.length} songs
@@ -432,7 +424,7 @@ export default function PortalMusicLibrary() {
                   ? canOrder
                     ? " · Drag the grip beside a song to reorder. Drop to save."
                     : sort !== "manual"
-                      ? " · Choose Manual order to drag songs into your saved sequence."
+                      ? " · Click Order to return to your saved sequence and drag songs."
                       : " · Clear search, playlist and untagged filters to reorder."
                   : status === "archived"
                     ? " · Archived songs stay archived when playlists are imported again."
@@ -516,7 +508,7 @@ export default function PortalMusicLibrary() {
               data-song-dragging={Boolean(dragging)}
               className="max-h-[65vh] overflow-auto border border-border"
             >
-              <table className="w-full min-w-[650px] text-left text-sm">
+              <table className="w-full min-w-[800px] text-left text-sm">
                 <thead className="sticky top-0 z-10 border-b border-border bg-card text-[10px] uppercase tracking-widest text-muted-foreground">
                   <tr>
                     <th className="w-12 p-4">
@@ -544,9 +536,40 @@ export default function PortalMusicLibrary() {
                         }
                       />
                     </th>
-                    <th className="w-24 py-4">{sort === "manual" ? "Order" : "No."}</th>
-                    <th className="py-4">Song / Artist</th>
-                    <th className="py-4">Genres</th>
+                    <th scope="col" className="w-24" aria-sort={sort === "manual" ? "other" : "none"}>
+                      <button
+                        type="button"
+                        aria-label="Order: restore manual order"
+                        title="Return to saved manual order"
+                        onClick={() => { setSort("manual"); setSortDirection("asc"); }}
+                        className={`w-full py-4 text-left uppercase tracking-widest hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground ${sort === "manual" ? "text-foreground" : ""}`}
+                      >
+                        Order
+                      </button>
+                    </th>
+                    {([
+                      ["song", "Song"],
+                      ["artist", "Artist"],
+                      ["genre", "Genre"],
+                    ] as const).map(([column, label]) => {
+                      const active = sort === column;
+                      const SortIcon = active ? (sortDirection === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+                      const nextDirection = active && sortDirection === "asc" ? "Z–A" : "A–Z";
+                      return (
+                        <th key={column} scope="col" aria-sort={active ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}>
+                          <button
+                            type="button"
+                            aria-label={`${label}: sort ${nextDirection}`}
+                            title={column === "genre" ? `Sort ${nextDirection} by first genre alphabetically; untagged songs last` : `Sort ${nextDirection}`}
+                            onClick={() => sortColumn(column)}
+                            className={`flex w-full items-center gap-2 py-4 pr-4 text-left uppercase tracking-widest hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground ${active ? "text-foreground" : ""}`}
+                          >
+                            {label}
+                            <SortIcon aria-hidden="true" className={`h-3 w-3 ${active ? "" : "opacity-40"}`} />
+                          </button>
+                        </th>
+                      );
+                    })}
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -613,9 +636,9 @@ export default function PortalMusicLibrary() {
                         </td>
                         <td className="py-4 pr-4">
                           <p className="font-medium">{track.title}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {track.artist}
-                          </p>
+                        </td>
+                        <td className="py-4 pr-4 text-muted-foreground">
+                          {track.artist}
                         </td>
                         <td className="max-w-72 py-3 pr-3">
                           <button
@@ -696,7 +719,7 @@ export default function PortalMusicLibrary() {
                       </tr>
                       {playing === track.id && (
                         <tr className="border-b border-border bg-foreground/[.02]">
-                          <td colSpan={5}>
+                          <td colSpan={6}>
                             <InlineTrackPlayer
                               id={track.id}
                               title={track.title}

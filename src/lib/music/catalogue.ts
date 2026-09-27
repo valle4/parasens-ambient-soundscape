@@ -29,6 +29,7 @@ export type Catalogue = {
 };
 export type ImportTrack = Pick<MusicTrack, "id" | "title" | "artist">;
 export type MusicSort = "manual" | "artist" | "song" | "genre";
+export type MusicSortDirection = "asc" | "desc";
 
 // Sorting is a view preference; never mutate the saved manual sequence.
 export function sortTracks(
@@ -36,6 +37,7 @@ export function sortTracks(
   sort: MusicSort,
   categories: Category[],
   tags: TrackTag[],
+  direction: MusicSortDirection = "asc",
 ): MusicTrack[] {
   if (sort === "manual") return tracks;
   const compare = new Intl.Collator("en", { sensitivity: "base", numeric: true }).compare;
@@ -57,9 +59,12 @@ export function sortTracks(
       const aGenre = genreByTrack.get(a.id);
       const bGenre = genreByTrack.get(b.id);
       // Use the first genre alphabetically for multi-genre songs; untagged last.
-      primary = aGenre && bGenre ? compare(aGenre, bGenre) : aGenre ? -1 : bGenre ? 1 : 0;
+      if (!aGenre && bGenre) return 1;
+      if (aGenre && !bGenre) return -1;
+      primary = aGenre && bGenre ? compare(aGenre, bGenre) : 0;
     }
-    return primary || compare(a.title, b.title) || compare(a.artist, b.artist) || compare(a.id, b.id);
+    return (direction === "asc" ? 1 : -1) *
+      (primary || compare(a.title, b.title) || compare(a.artist, b.artist) || compare(a.id, b.id));
   });
 }
 
