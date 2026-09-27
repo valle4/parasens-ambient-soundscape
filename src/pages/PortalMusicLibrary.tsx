@@ -22,13 +22,6 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import SearchableSelect from "@/components/music/SearchableSelect";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -93,8 +86,8 @@ export default function PortalMusicLibrary() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [tagging, setTagging] = useState(false);
-  const [tagIds, setTagIds] = useState<Set<string>>(new Set());
-  const [tagMode, setTagMode] = useState("add");
+  const [tagCounts, setTagCounts] = useState<Map<string, number>>(new Map());
+  const [tagEdits, setTagEdits] = useState<Map<string, boolean>>(new Map());
   const [tagSearch, setTagSearch] = useState("");
   const [newName, setNewName] = useState("");
   const [newParent, setNewParent] = useState("");
@@ -257,20 +250,39 @@ export default function PortalMusicLibrary() {
       return next;
     });
   const startTagging = (id?: string) => {
-    if (id) setSelected(new Set([id]));
-    setTagIds(new Set());
-    setTagMode("add");
+    const targets = id && !selected.has(id) ? new Set([id]) : selected;
+    setSelected(targets);
+    const counts = new Map<string, number>();
+    for (const trackId of targets)
+      for (const categoryId of tagsByTrack.get(trackId) ?? [])
+        counts.set(categoryId, (counts.get(categoryId) ?? 0) + 1);
+    setTagCounts(counts);
+    setTagEdits(new Map());
     setTagSearch("");
+    setNewName("");
+    setNewParent("");
     setTagging(true);
   };
+  const changeTag = (id: string, checked: boolean) =>
+    setTagEdits((old) => {
+      const next = new Map(old);
+      const count = tagCounts.get(id) ?? 0;
+      if (checked ? count === selected.size : count === 0) next.delete(id);
+      else next.set(id, checked);
+      return next;
+    });
   const saveTags = async () => {
     if (
       await mutate(
         () =>
-          musicRpc("music_tag_tracks", {
+          musicRpc("music_edit_track_genres", {
             p_ids: [...selected],
-            p_categories: [...tagIds],
-            p_mode: tagMode,
+            p_add_categories: [...tagEdits]
+              .filter(([, checked]) => checked)
+              .map(([id]) => id),
+            p_remove_categories: [...tagEdits]
+              .filter(([, checked]) => !checked)
+              .map(([id]) => id),
           }),
         "Tags saved.",
       )
@@ -286,7 +298,7 @@ export default function PortalMusicLibrary() {
         p_parent: newParent || null,
       });
       await refresh();
-      setTagIds((old) => new Set([...old, id]));
+      changeTag(id, true);
       setNewName("");
       toast.success("Category created and selected.");
     } catch (e) {
@@ -874,23 +886,11 @@ export default function PortalMusicLibrary() {
               Tag {selected.size} song{selected.size === 1 ? "" : "s"}
             </DialogTitle>
             <DialogDescription>
-              Choose existing genres or create one below. Songs can belong to
-              several genres.
+              Check a genre to add it, or uncheck it to remove it.
+              {selected.size > 1 &&
+                " A dash means only some selected songs have that genre. Unchanged genres stay as they are."}
             </DialogDescription>
           </DialogHeader>
-          <Select value={tagMode} onValueChange={setTagMode} disabled={busy}>
-            <SelectTrigger
-              aria-label="How to apply tags"
-              className="rounded-none"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="rounded-none">
-              <SelectItem value="add">Add to existing tags</SelectItem>
-              <SelectItem value="replace">Replace existing tags</SelectItem>
-              <SelectItem value="remove">Remove selected tags</SelectItem>
-            </SelectContent>
-          </Select>
           <Input
             aria-label="Search available genres"
             placeholder="Search genres and subgenres…"
@@ -910,14 +910,16 @@ export default function PortalMusicLibrary() {
                   <Checkbox
                     className="rounded-none border-muted-foreground/50"
                     disabled={busy}
-                    checked={tagIds.has(c.id)}
+                    checked={
+                      tagEdits.get(c.id) ??
+                      (!tagCounts.has(c.id)
+                        ? false
+                        : tagCounts.get(c.id) === selected.size
+                          ? true
+                          : "indeterminate")
+                    }
                     onCheckedChange={(checked) =>
-                      setTagIds((old) => {
-                        const next = new Set(old);
-                        if (checked === true) next.add(c.id);
-                        else next.delete(c.id);
-                        return next;
-                      })
+                      changeTag(c.id, checked === true)
                     }
                   />
                   {categoryLabel(c, data.categories)}
@@ -970,7 +972,7 @@ export default function PortalMusicLibrary() {
             </div>
           </details>
           <Button
-            disabled={busy || !tagIds.size}
+            disabled={busy || !tagEdits.size}
             onClick={() => void saveTags()}
           >
             {busy ? "Saving…" : "Apply tags"}

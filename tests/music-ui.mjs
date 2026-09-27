@@ -56,6 +56,7 @@ await db.exec(
 for (const name of [
   "202609200001_music_library.sql",
   "202609200002_music_seed.sql",
+  "202609270003_music_genre_edits.sql",
 ])
   await db.exec(await readFile(`${root}/supabase/migrations/${name}`, "utf8"));
 await db.exec(
@@ -178,14 +179,14 @@ async function contextFor(userId = owner) {
   );
   return context;
 }
-try {
+async function runChecks() {
   const context = await contextFor();
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(base + "/portal/music");
   await page
-    .getByRole("heading", { name: "Music Library", exact: true })
+    .getByRole("heading", { name: "Website music", exact: true })
     .waitFor();
   await page.getByText("1500 songs ·", { exact: false }).waitFor();
   assert.equal(await page.locator("tbody tr").count(), 50);
@@ -196,11 +197,88 @@ try {
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await page.getByText("Page 2 of 30").waitFor();
   await page.getByRole("button", { name: "Previous", exact: true }).click();
-  await page.getByLabel("Select New song 0001", { exact: true }).check();
-  await page.getByRole("button", { name: "Tag songs", exact: true }).click();
+  // A row's genre button must keep the entire highlighted selection.
+  for (const number of [1, 2, 3])
+    await page.getByLabel(`Select New song 000${number}`, { exact: true }).check();
+  await page.getByRole("button", { name: "Edit genres for New song 0002", exact: true }).click();
+  await page.getByRole("heading", { name: "Tag 3 songs", exact: true }).waitFor();
   await page.getByRole("dialog").getByLabel("Piano", { exact: true }).check();
   await page.getByRole("button", { name: "Apply tags", exact: true }).click();
   await page.getByRole("dialog").waitFor({ state: "hidden" });
+  const taggedSongs = async () => (await db.query(
+    `select t.title from music_tracks t
+     join music_track_categories tc on tc.track_id = t.id
+     join music_categories c on c.id = tc.category_id
+     where t.title like 'New song %' and c.name = 'Piano' order by t.title`,
+  )).rows.map((row) => row.title);
+  assert.deepEqual(await taggedSongs(), ["New song 0001", "New song 0002", "New song 0003"]);
+
+  // Clicking outside the selection still opens a single-song edit.
+  await page.getByLabel("Select New song 0001", { exact: true }).check();
+  await page.getByLabel("Select New song 0002", { exact: true }).check();
+  await page.getByRole("button", { name: "Edit genres for New song 0004", exact: true }).click();
+  await page.getByRole("heading", { name: "Tag 1 song", exact: true }).waitFor();
+  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+  assert.equal(await page.getByLabel("Select New song 0004", { exact: true }).isChecked(), true);
+  assert.equal(await page.getByLabel("Select New song 0001", { exact: true }).isChecked(), false);
+  await page.getByRole("button", { name: "Clear selection", exact: true }).click();
+
+  // With no selection, the row button edits only the clicked song.
+  await page.getByRole("button", { name: "Edit genres for New song 0004", exact: true }).click();
+  await page.getByRole("heading", { name: "Tag 1 song", exact: true }).waitFor();
+  await page.getByRole("dialog").getByLabel("Piano", { exact: true }).check();
+  await page.getByRole("button", { name: "Apply tags", exact: true }).click();
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  assert.deepEqual(await taggedSongs(), ["New song 0001", "New song 0002", "New song 0003", "New song 0004"]);
+
+  // Reopening shows saved genres, and unchecking removes them when saved.
+  await page.getByRole("button", { name: "Edit genres for New song 0004", exact: true }).click();
+  assert.equal(await page.getByRole("dialog").getByLabel("Piano", { exact: true }).isChecked(), true);
+  assert.equal(await page.getByRole("button", { name: "Apply tags", exact: true }).isDisabled(), true);
+  await page.getByRole("dialog").getByLabel("Piano", { exact: true }).uncheck();
+  await page.getByRole("dialog").getByLabel("Jazz", { exact: true }).check();
+  await page.getByRole("button", { name: "Apply tags", exact: true }).click();
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  assert.deepEqual(await taggedSongs(), ["New song 0001", "New song 0002", "New song 0003"]);
+
+  // Mixed genres remain per-song until explicitly changed.
+  await page.getByLabel("Select New song 0001", { exact: true }).check();
+  await page.getByLabel("Select New song 0004", { exact: true }).check();
+  await page.getByRole("button", { name: "Edit genres for New song 0004", exact: true }).click();
+  for (const name of ["Piano", "Jazz"])
+    assert.equal(await page.getByRole("dialog").getByLabel(name, { exact: true }).getAttribute("aria-checked"), "mixed");
+  await page.getByRole("dialog").getByLabel("Classical", { exact: true }).check();
+  await page.getByRole("button", { name: "Apply tags", exact: true }).click();
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  const genresFor = async (number) => (await db.query(
+    `select c.name from music_track_categories tc join music_categories c on c.id=tc.category_id
+     join music_tracks t on t.id=tc.track_id where t.title=$1 order by c.name`,
+    [`New song 000${number}`],
+  )).rows.map((row) => row.name);
+  assert.deepEqual(await genresFor(1), ["Classical", "Piano"]);
+  assert.deepEqual(await genresFor(4), ["Classical", "Jazz"]);
+
+  // A shared genre is checked; unchecking removes it from both tracks.
+  await page.getByLabel("Select New song 0001", { exact: true }).check();
+  await page.getByLabel("Select New song 0004", { exact: true }).check();
+  await page.getByRole("button", { name: "Tag songs", exact: true }).click();
+  assert.equal(await page.getByRole("dialog").getByLabel("Classical", { exact: true }).isChecked(), true);
+  await page.getByRole("dialog").getByLabel("Classical", { exact: true }).uncheck();
+  await page.getByRole("button", { name: "Apply tags", exact: true }).click();
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  assert.deepEqual(await genresFor(1), ["Piano"]);
+  assert.deepEqual(await genresFor(4), ["Jazz"]);
+
+  await page.getByLabel("Select New song 0001", { exact: true }).check();
+  await page.getByRole("button", { name: "Tag songs", exact: true }).click();
+  await page.getByRole("dialog").getByLabel("Jazz", { exact: true }).check();
+  await page.getByRole("button", { name: "Apply tags", exact: true }).click();
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  if (process.argv.includes("--genres-only")) {
+    assert.deepEqual(errors, []);
+    console.log("Genre selection and editing UI checks passed.");
+    return;
+  }
   await page.getByLabel("Select New song 0001", { exact: true }).check();
   await page
     .getByRole("button", { name: "Publish selected", exact: true })
@@ -307,6 +385,9 @@ try {
     "UI checks passed: 1,500 drafts, 50-row paging, bulk tags, publish/archive/restore, saved positions, category creation, mobile fit, public ordering and artist denial.",
   );
   console.log("Screenshots: " + screenshots);
+}
+try {
+  await runChecks();
 } finally {
   await browser.close();
   await db.close();

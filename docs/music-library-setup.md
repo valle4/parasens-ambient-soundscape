@@ -19,8 +19,9 @@ administrators can use it. Artist accounts keep their existing portal access.
   Closing the player, changing the page/filter/tab, or opening another song ends
   that preview. The custom cursor renders above dialogs; embedded players use
   the native cursor.
-- Tag multiple songs at once: add tags, replace all tags, or remove selected
-  tags. A song can have several genres. A subgenre also places it in its parent
+- Tag multiple songs at once: clicking a selected row's genre button keeps the
+  full selection. Existing genres are checked; check or uncheck to add or remove.
+  Mixed genres stay unchanged unless edited. A subgenre also places it in its parent
   genre. Published songs must have at least one tag.
 - Archive rejected songs so repeat imports continue to skip them. Restore sends
   a song to drafts; publishing is an explicit separate action.
@@ -106,6 +107,14 @@ be removed from this screen.
 
 ## Validation
 
+- Genre editor update (2026-09-27, prepared locally): apply
+  `202609270003_music_genre_edits.sql` before deploying the updated frontend.
+  The row genre button keeps an existing selection; the popup displays saved
+  genres and supports checking/unchecking directly. Mixed genres remain
+  unchanged unless edited. The new admin-only RPC saves additions and removals
+  atomically and retains the rule that published songs need at least one genre.
+- `npm run test:music-genres`: focused browser regression for bulk selection,
+  single-song editing, existing checkmarks, removals and mixed selections.
 - `npm test`: PostgreSQL-compatible isolated tests cover migrations, ordinary
   artist/anonymous access, role escalation/revocation, 10-new-song reimports,
   overlapping playlists, sticky archives, bulk tagging/publishing, independent
