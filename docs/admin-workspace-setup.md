@@ -44,3 +44,13 @@ Removing a file revokes its portal metadata/access; it does not purge the underl
 71 automated checks passed, covering SQL permissions and state transitions, shared acts and reassignment, optimistic edits, file reservations/access, private notes, notification claims, invitation expiry/replay/reissue, existing music-library curation and cursor/drag behaviour. Type checking, scoped lint and the development build passed.
 
 An isolated browser preview using the real migrations with local test accounts verified: admin landing/navigation; private notes hidden from artist view; change request, actual WAV upload and resubmission; on-demand private file link; acceptance and manual delivery; editing artist genre tags. Test data stayed local.
+
+## Direct artist/account assignment update — 27 September 2026
+
+Prepared locally, awaiting Supabase reauthentication before deployment:
+
+- Artists → Add/Edit artist includes searchable account checkboxes; Save artist saves profile and memberships together.
+- Accounts → Edit access → Add artist includes name, label and genre fields. Create & assign artist immediately creates and links the artist, preserving other memberships and account roles. Other unsaved account edits remain pending until Save access.
+- While inviting a new account, inline creation selects the new artist; Save & send invitation creates the account and applies its selected artists.
+- Apply `202609270002_artist_account_assignment.sql` before publishing the frontend. Its admin-only function performs the profile save and membership changes in one transaction, validates accounts and never updates account roles or unrelated artists' memberships.
+- Isolated browser checks passed for creation with an assigned account and inline creation/assignment with an existing artist preserved. Database tests cover rollback, shared assignments, duplicate names, access restrictions and preservation of roles. Type checking, scoped lint and development build passed.

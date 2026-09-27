@@ -8,11 +8,13 @@ import {
   rows,
   portalRpc,
   type Artist,
+  type Account,
 } from "@/lib/portal/api";
 import { categoryLabel } from "@/lib/music/catalogue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import ArtistFields from "@/components/portal/admin/ArtistFields";
 export default function PortalArtists() {
   const cache = useQueryClient();
   const directory = useQuery({
@@ -26,12 +28,18 @@ export default function PortalArtists() {
         "portal_artist_members",
       ),
   });
+  const accounts = useQuery({
+    queryKey: ["portal-accounts"],
+    queryFn: () => rows<Account>("portal_accounts"),
+  });
+  const [assignedAccounts, setAssignedAccounts] = useState<string[]>([]);
+  const [accountSearch, setAccountSearch] = useState("");
+  const ready = Boolean(directory.data && accounts.data && members.data);
   const [editing, setEditing] = useState<Artist | null | undefined>();
   const [name, setName] = useState("");
   const [label, setLabel] = useState("");
   const [genres, setGenres] = useState<string[]>([]);
   const [search, setSearch] = useState("");
-  const [genreSearch, setGenreSearch] = useState("");
   const [busy, setBusy] = useState(false);
   const edit = (artist: Artist | null) => {
     setEditing(artist);
@@ -44,7 +52,12 @@ export default function PortalArtists() {
         .filter((g) => g.artist_id === artist?.id)
         .map((g) => g.category_id) ?? [],
     );
-    setGenreSearch("");
+    setAssignedAccounts(
+      members.data
+        ?.filter((m) => m.artist_id === artist?.id)
+        .map((m) => m.account_email) ?? [],
+    );
+    setAccountSearch("");
   };
   return (
     <PortalShell
@@ -59,7 +72,9 @@ export default function PortalArtists() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Button onClick={() => edit(null)}>Add artist</Button>
+        <Button disabled={busy || !ready} onClick={() => edit(null)}>
+          Add artist
+        </Button>
         <Link
           to="/portal/admin/submissions"
           className="self-center text-xs underline"
@@ -67,7 +82,15 @@ export default function PortalArtists() {
           Review suggested names in Submissions
         </Link>
       </div>
-      {directory.isError && <LoadError retry={() => directory.refetch()} />}
+      {(directory.isError || accounts.isError || members.isError) && (
+        <LoadError
+          retry={() => {
+            void directory.refetch();
+            void accounts.refetch();
+            void members.refetch();
+          }}
+        />
+      )}
       <div className="grid items-start gap-7 lg:grid-cols-2">
         <div className="divide-y divide-border border-y border-border">
           {directory.data?.artists
@@ -76,7 +99,11 @@ export default function PortalArtists() {
               <div key={a.id} className="space-y-3 py-5">
                 <div className="flex justify-between gap-4">
                   <h2 className="font-display text-xl">{a.name}</h2>
-                  <button onClick={() => edit(a)} className="text-xs underline">
+                  <button
+                    disabled={busy || !ready}
+                    onClick={() => edit(a)}
+                    className="text-xs underline"
+                  >
                     Edit artist
                   </button>
                 </div>
@@ -134,16 +161,18 @@ export default function PortalArtists() {
               e.preventDefault();
               setBusy(true);
               try {
-                await portalRpc("portal_save_artist", {
+                await portalRpc("portal_save_artist_accounts", {
                   p_name: name,
                   p_label: label,
                   p_genres: genres,
                   p_id: editing?.id ?? null,
+                  p_accounts: assignedAccounts,
                 });
                 await cache.invalidateQueries({
                   queryKey: ["portal-directory"],
                 });
-                toast.success("Artist saved.");
+                await cache.invalidateQueries({ queryKey: ["portal-members"] });
+                toast.success("Artist and account assignments saved.");
                 setEditing(undefined);
               } catch (e) {
                 toast.error(
@@ -157,72 +186,73 @@ export default function PortalArtists() {
             <h2 className="font-display text-xl">
               {editing ? "Edit artist" : "New artist"}
             </h2>
-            <label className="block space-y-2 text-sm">
-              <span>Artist name</span>
-              <Input
-                required
-                maxLength={120}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+            <fieldset disabled={busy} className="space-y-5">
+              <ArtistFields
+                directory={directory.data!}
+                name={name}
+                setName={setName}
+                label={label}
+                setLabel={setLabel}
+                genres={genres}
+                setGenres={setGenres}
               />
-            </label>
-            <label className="block space-y-2 text-sm">
-              <span>Label</span>
-              <Input
-                list="portal-labels"
-                maxLength={120}
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                placeholder="Choose or enter a label"
-              />
-              <datalist id="portal-labels">
-                {directory.data?.labels.map((l) => (
-                  <option key={l.id} value={l.name} />
-                ))}
-              </datalist>
-            </label>
-            <fieldset className="space-y-3">
-              <legend className="mb-3 text-sm">Genre tags</legend>
-              <Input
-                aria-label="Search artist genres"
-                placeholder="Search genres…"
-                value={genreSearch}
-                onChange={(e) => setGenreSearch(e.target.value)}
-              />
-              <div className="max-h-56 space-y-3 overflow-auto">
-                {directory.data?.genres
-                  .filter((c) =>
-                    categoryLabel(c, directory.data.genres)
-                      .toLowerCase()
-                      .includes(genreSearch.toLowerCase()),
-                  )
-                  .map((c) => (
-                    <label
-                      key={c.id}
-                      className="flex items-center gap-3 text-sm"
-                    >
-                      <Checkbox
-                        checked={genres.includes(c.id)}
-                        onCheckedChange={(checked) =>
-                          setGenres((old) =>
-                            checked
-                              ? [...old, c.id]
-                              : old.filter((id) => id !== c.id),
-                          )
-                        }
-                      />
-                      {categoryLabel(c, directory.data.genres)}
-                    </label>
-                  ))}
-              </div>
+              <fieldset className="space-y-3">
+                <legend className="mb-3 text-sm">Assigned accounts</legend>
+                <Input
+                  aria-label="Search accounts to assign"
+                  placeholder="Search name or email…"
+                  value={accountSearch}
+                  onChange={(e) => setAccountSearch(e.target.value)}
+                />
+                <div className="max-h-56 space-y-3 overflow-auto">
+                  {accounts.data
+                    ?.filter((a) =>
+                      `${a.display_name} ${a.email}`
+                        .toLowerCase()
+                        .includes(accountSearch.toLowerCase()),
+                    )
+                    .map((a) => (
+                      <label
+                        key={a.email}
+                        className="flex items-start gap-3 text-sm"
+                      >
+                        <Checkbox
+                          checked={assignedAccounts.includes(a.email)}
+                          onCheckedChange={(checked) =>
+                            setAssignedAccounts((old) =>
+                              checked
+                                ? [...old, a.email]
+                                : old.filter((email) => email !== a.email),
+                            )
+                          }
+                        />
+                        <span className="break-all">
+                          {a.display_name
+                            ? `${a.display_name} · ${a.email}`
+                            : a.email}
+                        </span>
+                      </label>
+                    ))}
+                  {accounts.data?.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Create an account in Accounts first, then assign it here.
+                    </p>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Selected accounts can access this artist’s releases. Several
+                  accounts can share an artist.
+                </p>
+              </fieldset>
             </fieldset>
             <div className="flex gap-3">
-              <Button disabled={busy || !name.trim()}>
+              <Button disabled={busy || !ready || !name.trim()}>
                 {busy ? "Saving…" : "Save artist"}
               </Button>
               <Button
                 type="button"
                 variant="ghost"
+                disabled={busy}
                 onClick={() => setEditing(undefined)}
               >
                 Cancel

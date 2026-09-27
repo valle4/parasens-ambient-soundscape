@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import ArtistFields from "@/components/portal/admin/ArtistFields";
 export default function PortalAccounts() {
   const cache = useQueryClient();
   const directory = useQuery({
@@ -47,6 +48,10 @@ export default function PortalAccounts() {
   const [isAdmin, setAdmin] = useState(false);
   const [search, setSearch] = useState("");
   const [artistSearch, setArtistSearch] = useState("");
+  const [addingArtist, setAddingArtist] = useState(false);
+  const [newArtistName, setNewArtistName] = useState("");
+  const [newArtistLabel, setNewArtistLabel] = useState("");
+  const [newArtistGenres, setNewArtistGenres] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const refresh = () =>
     Promise.all([
@@ -65,6 +70,7 @@ export default function PortalAccounts() {
     );
     setAdmin(Boolean(admins.data?.some((a) => a.email === account?.email)));
     setArtistSearch("");
+    setAddingArtist(false);
   };
   const invite = async (address: string) => {
     setBusy(true);
@@ -93,7 +99,7 @@ export default function PortalAccounts() {
           onChange={(e) => setSearch(e.target.value)}
         />
         <Button
-          disabled={!members.data || !admins.data}
+          disabled={busy || !members.data || !admins.data || !directory.data}
           onClick={() => edit(null)}
         >
           Invite account
@@ -132,7 +138,9 @@ export default function PortalAccounts() {
                   </div>
                   <button
                     className="text-xs underline"
-                    disabled={busy || !members.data || !admins.data}
+                    disabled={
+                      busy || !members.data || !admins.data || !directory.data
+                    }
                     onClick={() => edit(a)}
                   >
                     Edit access
@@ -184,6 +192,7 @@ export default function PortalAccounts() {
             className="space-y-5 border border-border p-6"
             onSubmit={async (e) => {
               e.preventDefault();
+              if (busy || addingArtist) return;
               setBusy(true);
               try {
                 await portalRpc("portal_save_account", {
@@ -211,72 +220,167 @@ export default function PortalAccounts() {
             <h2 className="font-display text-xl">
               {editing ? "Edit account" : "Invite account"}
             </h2>
-            <label className="block space-y-2 text-sm">
-              <span>Email</span>
-              <Input
-                required
-                type="email"
-                disabled={Boolean(editing)}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </label>
-            <label className="block space-y-2 text-sm">
-              <span>Name (optional)</span>
-              <Input
-                maxLength={120}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </label>
-            <label className="flex items-start gap-3 text-sm">
-              <Checkbox
-                checked={isAdmin}
-                onCheckedChange={(v) => setAdmin(v === true)}
-              />
-              <span>
-                Administrator
-                <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                  Full access to submissions, accounts, artists and website
-                  music.
+            <fieldset disabled={busy} className="space-y-5">
+              <label className="block space-y-2 text-sm">
+                <span>Email</span>
+                <Input
+                  required
+                  type="email"
+                  disabled={Boolean(editing)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </label>
+              <label className="block space-y-2 text-sm">
+                <span>Name (optional)</span>
+                <Input
+                  maxLength={120}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </label>
+              <label className="flex items-start gap-3 text-sm">
+                <Checkbox
+                  checked={isAdmin}
+                  onCheckedChange={(v) => setAdmin(v === true)}
+                />
+                <span>
+                  Administrator
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    Full access to submissions, accounts, artists and website
+                    music.
+                  </span>
                 </span>
-              </span>
-            </label>
-            <fieldset className="space-y-3">
-              <legend className="mb-3 text-sm">Assigned artist names</legend>
-              <Input
-                aria-label="Search artist assignments"
-                placeholder="Search artists…"
-                value={artistSearch}
-                onChange={(e) => setArtistSearch(e.target.value)}
-              />
-              <div className="max-h-56 space-y-3 overflow-auto">
-                {directory.data?.artists
-                  .filter((a) =>
-                    a.name.toLowerCase().includes(artistSearch.toLowerCase()),
-                  )
-                  .map((a) => (
-                    <label
-                      key={a.id}
-                      className="flex items-center gap-3 text-sm"
-                    >
-                      <Checkbox
-                        checked={artists.includes(a.id)}
-                        onCheckedChange={(v) =>
-                          setArtists((old) =>
-                            v
-                              ? [...old, a.id]
-                              : old.filter((id) => id !== a.id),
-                          )
+              </label>
+              <fieldset className="space-y-3">
+                <legend className="mb-3 text-sm">Assigned artist names</legend>
+                <Input
+                  aria-label="Search artist assignments"
+                  placeholder="Search artists…"
+                  value={artistSearch}
+                  onChange={(e) => setArtistSearch(e.target.value)}
+                />
+                <div className="max-h-56 space-y-3 overflow-auto">
+                  {directory.data?.artists
+                    .filter((a) =>
+                      a.name.toLowerCase().includes(artistSearch.toLowerCase()),
+                    )
+                    .map((a) => (
+                      <label
+                        key={a.id}
+                        className="flex items-center gap-3 text-sm"
+                      >
+                        <Checkbox
+                          checked={artists.includes(a.id)}
+                          onCheckedChange={(v) =>
+                            setArtists((old) =>
+                              v
+                                ? [...old, a.id]
+                                : old.filter((id) => id !== a.id),
+                            )
+                          }
+                        />
+                        {a.name}
+                      </label>
+                    ))}
+                </div>
+              </fieldset>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={addingArtist}
+                onClick={() => {
+                  setNewArtistName("");
+                  setNewArtistLabel("");
+                  setNewArtistGenres([]);
+                  setAddingArtist(true);
+                }}
+              >
+                Add artist
+              </Button>
+              {addingArtist && directory.data && (
+                <section
+                  className="space-y-5 border border-border p-5"
+                  aria-label="Create artist for account"
+                >
+                  <h3 className="font-display text-lg">New artist</h3>
+                  <ArtistFields
+                    directory={directory.data}
+                    name={newArtistName}
+                    setName={setNewArtistName}
+                    label={newArtistLabel}
+                    setLabel={setNewArtistLabel}
+                    genres={newArtistGenres}
+                    setGenres={setNewArtistGenres}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {editing
+                      ? "Creates the artist and assigns it to this account immediately. Other access changes are saved with Save access."
+                      : "Creates the artist and selects it for this invitation. Save & send invitation assigns the selected artists to the new account."}
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      type="button"
+                      disabled={!newArtistName.trim()}
+                      onClick={async () => {
+                        setBusy(true);
+                        try {
+                          const id = await portalRpc<string>(
+                            "portal_save_artist_accounts",
+                            {
+                              p_name: newArtistName,
+                              p_label: newArtistLabel,
+                              p_genres: newArtistGenres,
+                              p_id: null,
+                              p_accounts: editing ? [editing.email] : [],
+                            },
+                          );
+                          setArtists((old) => [...new Set([...old, id])]);
+                          setAddingArtist(false);
+                          setArtistSearch("");
+                          await Promise.all([
+                            cache.invalidateQueries({
+                              queryKey: ["portal-directory"],
+                            }),
+                            cache.invalidateQueries({
+                              queryKey: ["portal-members"],
+                            }),
+                          ]);
+                          toast.success(
+                            editing
+                              ? "Artist created and assigned."
+                              : "Artist created and selected.",
+                          );
+                        } catch (e) {
+                          toast.error(
+                            e instanceof Error
+                              ? e.message
+                              : "Could not create artist.",
+                          );
+                        } finally {
+                          setBusy(false);
                         }
-                      />
-                      {a.name}
-                    </label>
-                  ))}
-              </div>
+                      }}
+                    >
+                      {busy
+                        ? "Saving…"
+                        : editing
+                          ? "Create & assign artist"
+                          : "Create artist"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setAddingArtist(false)}
+                    >
+                      Cancel new artist
+                    </Button>
+                  </div>
+                </section>
+              )}
             </fieldset>
             <div className="flex gap-3">
-              <Button disabled={busy}>
+              <Button disabled={busy || addingArtist}>
                 {busy
                   ? "Saving…"
                   : editing
@@ -286,6 +390,7 @@ export default function PortalAccounts() {
               <Button
                 type="button"
                 variant="ghost"
+                disabled={busy}
                 onClick={() => setEditing(undefined)}
               >
                 Cancel

@@ -14,6 +14,7 @@ test("private admin workspace, submissions and permissions", async (t) => {
   for (const file of [
     "202609200001_music_library.sql",
     "202609270001_admin_workspace.sql",
+    "202609270002_artist_account_assignment.sql",
   ])
     await db.exec(
       await readFile(
@@ -298,28 +299,204 @@ test("private admin workspace, submissions and permissions", async (t) => {
       );
     },
   );
-  await t.test("artist suggestions remain private until approval assigns the submitting account", async () => {
-    const draft = "10000000-0000-0000-0000-000000000002";
-    await as(a, () => rpc("portal_save_release", [draft, 0, null, "Suggested act", content]));
-    assert.equal((await as(b, () => q("select * from portal_releases where id=$1", [draft]))).length, 0);
-    await as(admin, () => rpc("portal_approve_artist", [draft, other]));
-    assert.equal((await as(a, () => q("select * from portal_artists where id=$1", [other]))).length, 1);
-    await assert.rejects(as(a, () => rpc("portal_save_release", [draft, null, other, "", content])), /changed/);
-  });
-  await t.test("email claims cannot be made by artists or admins; provider retry window is bounded", async () => {
-    const claim = "40000000-0000-0000-0000-000000000001";
-    await assert.rejects(as(admin, () => rpc("portal_claim_notifications", [rid, claim])), /permission denied/);
-    await db.exec("set role service_role");
-    const first = await q("select * from portal_claim_notifications($1,$2)", [rid, claim]);
-    const second = await q("select * from portal_claim_notifications($1,$2)", [rid, claim]);
-    await db.exec("reset role");
-    assert.equal(first.length, 1);
-    assert.equal(second.length, 0);
-    await q("update portal_notifications set first_attempt_at=now()-interval '24 hours',claimed_at=now()-interval '10 minutes'");
-    await db.exec("set role service_role");
-    assert.equal((await q("select * from portal_claim_notifications($1,$2)", [rid, claim])).length, 0);
-    await db.exec("reset role");
-    assert.equal((await q("select state from portal_notifications"))[0].state, "uncertain");
-  });
+  await t.test(
+    "artist suggestions remain private until approval assigns the submitting account",
+    async () => {
+      const draft = "10000000-0000-0000-0000-000000000002";
+      await as(a, () =>
+        rpc("portal_save_release", [draft, 0, null, "Suggested act", content]),
+      );
+      assert.equal(
+        (
+          await as(b, () =>
+            q("select * from portal_releases where id=$1", [draft]),
+          )
+        ).length,
+        0,
+      );
+      await as(admin, () => rpc("portal_approve_artist", [draft, other]));
+      assert.equal(
+        (
+          await as(a, () =>
+            q("select * from portal_artists where id=$1", [other]),
+          )
+        ).length,
+        1,
+      );
+      await assert.rejects(
+        as(a, () =>
+          rpc("portal_save_release", [draft, null, other, "", content]),
+        ),
+        /changed/,
+      );
+    },
+  );
+  await t.test(
+    "email claims cannot be made by artists or admins; provider retry window is bounded",
+    async () => {
+      const claim = "40000000-0000-0000-0000-000000000001";
+      await assert.rejects(
+        as(admin, () => rpc("portal_claim_notifications", [rid, claim])),
+        /permission denied/,
+      );
+      await db.exec("set role service_role");
+      const first = await q("select * from portal_claim_notifications($1,$2)", [
+        rid,
+        claim,
+      ]);
+      const second = await q(
+        "select * from portal_claim_notifications($1,$2)",
+        [rid, claim],
+      );
+      await db.exec("reset role");
+      assert.equal(first.length, 1);
+      assert.equal(second.length, 0);
+      await q(
+        "update portal_notifications set first_attempt_at=now()-interval '24 hours',claimed_at=now()-interval '10 minutes'",
+      );
+      await db.exec("set role service_role");
+      assert.equal(
+        (
+          await q("select * from portal_claim_notifications($1,$2)", [
+            rid,
+            claim,
+          ])
+        ).length,
+        0,
+      );
+      await db.exec("reset role");
+      assert.equal(
+        (await q("select state from portal_notifications"))[0].state,
+        "uncertain",
+      );
+    },
+  );
+  await t.test(
+    "artist creation and account assignment are atomic, admin-only, and preserve other access",
+    async () => {
+      const original = await q(
+        "select * from portal_artist_members order by artist_id,account_email",
+      );
+      const roles = await q(
+        "select email,role from music_admins order by email",
+      );
+      const created = await as(admin, () =>
+        rpc("portal_save_artist_accounts", [
+          "Inline act",
+          "Label",
+          [],
+          null,
+          [" A@example.com ", "b@example.com", "a@example.com"],
+        ]),
+      );
+      assert.equal(
+        (
+          await q("select * from portal_artist_members where artist_id=$1", [
+            created,
+          ])
+        ).length,
+        2,
+      );
+      assert.deepEqual(
+        await q(
+          "select * from portal_artist_members where artist_id<>$1 order by artist_id,account_email",
+          [created],
+        ),
+        original,
+      );
+      await as(admin, () =>
+        rpc("portal_save_artist_accounts", [
+          "Inline act",
+          "Updated label",
+          [],
+          created,
+          ["b@example.com"],
+        ]),
+      );
+      assert.deepEqual(
+        await q(
+          "select account_email from portal_artist_members where artist_id=$1",
+          [created],
+        ),
+        [{ account_email: "b@example.com" }],
+      );
+      assert.deepEqual(
+        await q("select email,role from music_admins order by email"),
+        roles,
+      );
+      await assert.rejects(
+        as(a, () =>
+          rpc("portal_save_artist_accounts", [
+            "Forbidden",
+            "",
+            [],
+            null,
+            ["a@example.com"],
+          ]),
+        ),
+        /Administrator/,
+      );
+      await assert.rejects(
+        as(null, () =>
+          rpc("portal_save_artist_accounts", ["Forbidden", "", [], null, []]),
+        ),
+        /permission denied/,
+      );
+      await assert.rejects(
+        as(admin, () =>
+          rpc("portal_save_artist_accounts", [
+            "Must roll back",
+            "",
+            [],
+            null,
+            ["missing@example.com"],
+          ]),
+        ),
+        /no longer exists/,
+      );
+      assert.equal(
+        (await q("select * from portal_artists where name='Must roll back'"))
+          .length,
+        0,
+      );
+      await assert.rejects(
+        as(admin, () =>
+          rpc("portal_save_artist_accounts", [
+            "Changed",
+            "",
+            [],
+            created,
+            [null],
+          ]),
+        ),
+        /no longer exists/,
+      );
+      assert.equal(
+        (await q("select name from portal_artists where id=$1", [created]))[0]
+          .name,
+        "Inline act",
+      );
+      await assert.rejects(
+        as(admin, () =>
+          rpc("portal_save_artist_accounts", [
+            "Inline act",
+            "",
+            [],
+            null,
+            ["a@example.com"],
+          ]),
+        ),
+        /duplicate key/,
+      );
+      assert.equal(
+        (
+          await q("select * from portal_artist_members where artist_id=$1", [
+            created,
+          ])
+        ).length,
+        1,
+      );
+    },
+  );
   await db.close();
 });
