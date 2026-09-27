@@ -548,7 +548,7 @@ const PortalNewRelease = () => {
                           required={currentStep === 3}
                           value={track.composers}
                           onChange={(event) => updateTrack(track.id, "composers", event.target.value)}
-                          placeholder="Full legal names"
+                          placeholder="Full legal name / PRO Pseudonym"
                           className={fieldClassName}
                         />
                       </label>
