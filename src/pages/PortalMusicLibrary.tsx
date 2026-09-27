@@ -41,7 +41,9 @@ import {
 } from "@/lib/music/api";
 import {
   categoryLabel,
+  sortTracks,
   tracksInScope,
+  type MusicSort,
   type MusicStatus,
   type MusicTrack,
 } from "@/lib/music/catalogue";
@@ -66,6 +68,7 @@ export default function PortalMusicLibrary() {
   });
   const [status, setStatus] = useState<MusicStatus>("draft");
   const [scope, setScope] = useState("all");
+  const [sort, setSort] = useState<MusicSort>("manual");
   const [search, setSearch] = useState("");
   const [untagged, setUntagged] = useState(false);
   const [playlist, setPlaylist] = useState("");
@@ -85,7 +88,7 @@ export default function PortalMusicLibrary() {
   useEffect(() => {
     tableRef.current?.scrollTo({ top: 0 });
     setPlaying(null);
-  }, [page, status, scope, search, untagged, playlist, tab]);
+  }, [page, status, scope, search, untagged, playlist, tab, sort]);
   const membership = useQuery({
     queryKey: ["music-playlist-members", playlist, user.id],
     enabled: Boolean(playlist),
@@ -107,7 +110,7 @@ export default function PortalMusicLibrary() {
   useEffect(() => {
     setPage(0);
     setSelected(new Set());
-  }, [status, scope, search, untagged, playlist]);
+  }, [status, scope, search, untagged, playlist, sort]);
   const data = library.data;
   const tagsByTrack = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -138,11 +141,15 @@ export default function PortalMusicLibrary() {
   );
   const lastPage = Math.max(0, Math.ceil(filtered.length / pageSize) - 1);
   const currentPage = Math.min(page, lastPage);
-  const visible = filtered.slice(
+  const sorted = useMemo(
+    () => sortTracks(filtered, sort, data?.categories ?? [], data?.tags ?? []),
+    [filtered, sort, data?.categories, data?.tags],
+  );
+  const visible = sorted.slice(
     currentPage * pageSize,
     (currentPage + 1) * pageSize,
   );
-  const canOrder = status === "published" && !search && !untagged && !playlist;
+  const canOrder = status === "published" && sort === "manual" && !search && !untagged && !playlist;
   const refresh = async () => {
     await Promise.all([
       cache.invalidateQueries({ queryKey: ["music-library"] }),
@@ -401,13 +408,32 @@ export default function PortalMusicLibrary() {
                 </label>
               </div>
             </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <span id="music-sort-label" className="text-[10px] uppercase tracking-widest text-muted-foreground">Sort by</span>
+              <Select value={sort} onValueChange={(value) => setSort(value as MusicSort)}>
+                <SelectTrigger aria-labelledby="music-sort-label" className="w-48 rounded-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-none">
+                  <SelectItem value="manual">Manual order</SelectItem>
+                  <SelectItem value="artist">Artist · A–Z</SelectItem>
+                  <SelectItem value="song">Song · A–Z</SelectItem>
+                  <SelectItem value="genre">Genre · A–Z</SelectItem>
+                </SelectContent>
+              </Select>
+              {sort === "genre" && (
+                <span className="text-xs text-muted-foreground">First genre alphabetically; untagged songs last.</span>
+              )}
+            </div>
             <div className="my-5 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
               <p>
                 {filtered.length} songs
                 {status === "published"
                   ? canOrder
                     ? " · Drag the grip beside a song to reorder. Drop to save."
-                    : " · Clear search, playlist and untagged filters to reorder."
+                    : sort !== "manual"
+                      ? " · Choose Manual order to drag songs into your saved sequence."
+                      : " · Clear search, playlist and untagged filters to reorder."
                   : status === "archived"
                     ? " · Archived songs stay archived when playlists are imported again."
                     : " · Tag songs, then publish when ready."}
@@ -518,7 +544,7 @@ export default function PortalMusicLibrary() {
                         }
                       />
                     </th>
-                    <th className="w-24 py-4">Order</th>
+                    <th className="w-24 py-4">{sort === "manual" ? "Order" : "No."}</th>
                     <th className="py-4">Song / Artist</th>
                     <th className="py-4">Genres</th>
                     <th className="p-4 text-right">Actions</th>

@@ -28,6 +28,40 @@ export type Catalogue = {
   orders: TrackOrder[];
 };
 export type ImportTrack = Pick<MusicTrack, "id" | "title" | "artist">;
+export type MusicSort = "manual" | "artist" | "song" | "genre";
+
+// Sorting is a view preference; never mutate the saved manual sequence.
+export function sortTracks(
+  tracks: MusicTrack[],
+  sort: MusicSort,
+  categories: Category[],
+  tags: TrackTag[],
+): MusicTrack[] {
+  if (sort === "manual") return tracks;
+  const compare = new Intl.Collator("en", { sensitivity: "base", numeric: true }).compare;
+  const genreByTrack = new Map<string, string>();
+  if (sort === "genre") {
+    const labels = new Map(categories.map((c) => [c.id, categoryLabel(c, categories)]));
+    for (const tag of tags) {
+      const label = labels.get(tag.category_id);
+      const current = genreByTrack.get(tag.track_id);
+      if (label && (!current || compare(label, current) < 0)) {
+        genreByTrack.set(tag.track_id, label);
+      }
+    }
+  }
+  return [...tracks].sort((a, b) => {
+    let primary = 0;
+    if (sort === "artist") primary = compare(a.artist, b.artist);
+    if (sort === "genre") {
+      const aGenre = genreByTrack.get(a.id);
+      const bGenre = genreByTrack.get(b.id);
+      // Use the first genre alphabetically for multi-genre songs; untagged last.
+      primary = aGenre && bGenre ? compare(aGenre, bGenre) : aGenre ? -1 : bGenre ? 1 : 0;
+    }
+    return primary || compare(a.title, b.title) || compare(a.artist, b.artist) || compare(a.id, b.id);
+  });
+}
 
 export function spotifyId(
   value: string,
