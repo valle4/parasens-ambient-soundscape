@@ -47,7 +47,7 @@ An isolated browser preview using the real migrations with local test accounts v
 
 ## Direct artist/account assignment update — 27 September 2026
 
-Prepared locally, awaiting Supabase reauthentication before deployment:
+Migration `202609270002_artist_account_assignment.sql` applied and recorded in migration history on 27 September 2026 after Supabase reauthentication. Publishing the tested frontend to development; production has no Supabase connection and remains unchanged.
 
 - Artists → Add/Edit artist includes searchable account checkboxes; Save artist saves profile and memberships together.
 - Accounts → Edit access → Add artist includes name, label and genre fields. Create & assign artist immediately creates and links the artist, preserving other memberships and account roles. Other unsaved account edits remain pending until Save access.
