@@ -16,6 +16,9 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import SearchableSelect from "@/components/music/SearchableSelect";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -45,7 +48,6 @@ import {
 import { useSongDrag } from "@/hooks/useSongDrag";
 
 const pageSize = 50;
-const selectStyle = "h-10 border border-input bg-background px-3 text-sm";
 
 export default function PortalMusicLibrary() {
   const { user } = usePortalAuth();
@@ -73,6 +75,7 @@ export default function PortalMusicLibrary() {
   const [tagging, setTagging] = useState(false);
   const [tagIds, setTagIds] = useState<Set<string>>(new Set());
   const [tagMode, setTagMode] = useState("add");
+  const [tagSearch, setTagSearch] = useState("");
   const [newName, setNewName] = useState("");
   const [newParent, setNewParent] = useState("");
   const [playing, setPlaying] = useState<string | null>(null);
@@ -211,6 +214,7 @@ export default function PortalMusicLibrary() {
     if (id) setSelected(new Set([id]));
     setTagIds(new Set());
     setTagMode("add");
+    setTagSearch("");
     setTagging(true);
   };
   const saveTags = async () => {
@@ -352,51 +356,50 @@ export default function PortalMusicLibrary() {
         {tab === "admins" && role.data === "owner" && <MusicAdministrators />}
         {tab === "library" && data && (
           <>
-            <div className="flex flex-wrap gap-3">
-              <div className="relative min-w-56 flex-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative min-w-0 basis-full lg:min-w-56 lg:flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   aria-label="Search songs or artists"
                   placeholder="Search songs or artists…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10"
+                  className="rounded-none pl-10"
                 />
               </div>
-              <select
-                aria-label="Genre or subgenre"
-                className={selectStyle}
+              <SearchableSelect
+                label="Genre or subgenre"
                 value={scope}
-                onChange={(e) => setScope(e.target.value)}
-              >
-                <option value="all">All genres</option>
-                {data.categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {categoryLabel(c, data.categories)}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Source playlist"
-                className={selectStyle}
+                onValueChange={setScope}
+                searchPlaceholder="Search genres…"
+                className="sm:w-56"
+                options={[
+                  { value: "all", label: "All genres" },
+                  ...data.categories.map((c) => ({ value: c.id, label: categoryLabel(c, data.categories) })),
+                ]}
+              />
+              <SearchableSelect
+                label="Source playlist"
                 value={playlist}
-                onChange={(e) => setPlaylist(e.target.value)}
-              >
-                <option value="">All playlists</option>
-                {playlists.data?.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              <label className="flex items-center gap-2 px-2 text-sm">
-                <input
-                  type="checkbox"
+                onValueChange={setPlaylist}
+                searchPlaceholder="Search playlists…"
+                className="sm:w-56"
+                options={[
+                  { value: "", label: "All playlists" },
+                  ...(playlists.data ?? []).map((p) => ({ value: p.id, label: p.name })),
+                ]}
+              />
+              <div className="flex h-10 items-center gap-3 px-1 sm:px-2">
+                <Checkbox
+                  id="music-untagged-only"
                   checked={untagged}
-                  onChange={(e) => setUntagged(e.target.checked)}
+                  onCheckedChange={(checked) => setUntagged(checked === true)}
+                  className="rounded-none border-muted-foreground/50"
                 />
-                Untagged only
-              </label>
+                <label htmlFor="music-untagged-only" className="whitespace-nowrap text-sm text-muted-foreground">
+                  Untagged only
+                </label>
+              </div>
             </div>
             <div className="my-5 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
               <p>
@@ -491,19 +494,23 @@ export default function PortalMusicLibrary() {
                 <thead className="sticky top-0 z-10 border-b border-border bg-card text-[10px] uppercase tracking-widest text-muted-foreground">
                   <tr>
                     <th className="w-12 p-4">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         aria-label="Select songs on this page"
+                        className="rounded-none border-muted-foreground/50"
                         disabled={busy || !visible.length}
                         checked={
                           visible.length > 0 &&
                           visible.every((t) => selected.has(t.id))
+                            ? true
+                            : visible.some((t) => selected.has(t.id))
+                              ? "indeterminate"
+                              : false
                         }
-                        onChange={(e) =>
+                        onCheckedChange={(checked) =>
                           setSelected((old) => {
                             const next = new Set(old);
                             for (const t of visible) {
-                              if (e.target.checked) next.add(t.id);
+                              if (checked === true) next.add(t.id);
                               else next.delete(t.id);
                             }
                             return next;
@@ -521,7 +528,18 @@ export default function PortalMusicLibrary() {
                   {visible.map((track, index) => (
                     <Fragment key={track.id}>
                       <tr
-                        className={`border-b border-border/70 hover:bg-foreground/[.025] ${selected.has(track.id) ? "bg-foreground/[.04]" : ""} ${dragging === track.id ? "opacity-40" : ""}`}
+                        className={`border-b border-border/70 transition-colors ${busy ? "" : "cursor-pointer"} ${selected.has(track.id) ? "bg-foreground/[.07] hover:bg-foreground/[.09]" : "hover:bg-foreground/[.035]"} ${dragging === track.id ? "opacity-40" : ""}`}
+                        aria-selected={selected.has(track.id)}
+                        onClick={(event) => {
+                          // Keep nested controls independent, including the drag handle.
+                          if (
+                            busy ||
+                            dragging ||
+                            (event.target instanceof Element &&
+                              event.target.closest("button, input, a, label, select, textarea, [role='checkbox']"))
+                          ) return;
+                          toggle(track.id);
+                        }}
                         data-drop-edge={
                           dropTarget?.id === track.id
                             ? dropTarget.edge
@@ -530,12 +548,12 @@ export default function PortalMusicLibrary() {
                         data-song-row={track.id}
                       >
                         <td className="p-4">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             aria-label={`Select ${track.title}`}
+                            className="rounded-none border-muted-foreground/50"
                             checked={selected.has(track.id)}
                             disabled={busy}
-                            onChange={() => toggle(track.id)}
+                            onCheckedChange={() => toggle(track.id)}
                           />
                         </td>
                         <td>
@@ -738,28 +756,34 @@ export default function PortalMusicLibrary() {
               several genres.
             </DialogDescription>
           </DialogHeader>
-          <select
-            aria-label="How to apply tags"
-            className={selectStyle}
-            value={tagMode}
-            onChange={(e) => setTagMode(e.target.value)}
-            disabled={busy}
-          >
-            <option value="add">Add to existing tags</option>
-            <option value="replace">Replace existing tags</option>
-            <option value="remove">Remove selected tags</option>
-          </select>
+          <Select value={tagMode} onValueChange={setTagMode} disabled={busy}>
+            <SelectTrigger aria-label="How to apply tags" className="rounded-none">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-none">
+              <SelectItem value="add">Add to existing tags</SelectItem>
+              <SelectItem value="replace">Replace existing tags</SelectItem>
+              <SelectItem value="remove">Remove selected tags</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            aria-label="Search available genres"
+            placeholder="Search genres and subgenres…"
+            value={tagSearch}
+            onChange={(event) => setTagSearch(event.target.value)}
+            className="rounded-none"
+          />
           <div className="max-h-60 space-y-3 overflow-auto border border-border p-4">
-            {data?.categories.map((c) => (
+            {data?.categories.filter((c) => categoryLabel(c, data.categories).toLowerCase().includes(tagSearch.trim().toLowerCase())).map((c) => (
               <label key={c.id} className="flex items-center gap-3 text-sm">
-                <input
-                  type="checkbox"
+                <Checkbox
+                  className="rounded-none border-muted-foreground/50"
                   disabled={busy}
                   checked={tagIds.has(c.id)}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setTagIds((old) => {
                       const next = new Set(old);
-                      if (e.target.checked) next.add(c.id);
+                      if (checked === true) next.add(c.id);
                       else next.delete(c.id);
                       return next;
                     })
@@ -769,6 +793,9 @@ export default function PortalMusicLibrary() {
               </label>
             ))}
           </div>
+          {data && !data.categories.some((c) => categoryLabel(c, data.categories).toLowerCase().includes(tagSearch.trim().toLowerCase())) && (
+            <p className="text-sm text-muted-foreground">No matching genres. You can create one below.</p>
+          )}
           <details className="border border-border p-3">
             <summary className="cursor-pointer text-sm">
               + Create genre or subgenre
@@ -782,22 +809,17 @@ export default function PortalMusicLibrary() {
                 onChange={(e) => setNewName(e.target.value)}
                 disabled={busy}
               />
-              <select
-                aria-label="New category parent"
-                className={`${selectStyle} w-full`}
+              <SearchableSelect
+                label="New category parent"
                 value={newParent}
-                onChange={(e) => setNewParent(e.target.value)}
+                onValueChange={setNewParent}
                 disabled={busy}
-              >
-                <option value="">New top-level genre</option>
-                {data?.categories
-                  .filter((c) => !c.parent_id)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-              </select>
+                searchPlaceholder="Search parent genres…"
+                options={[
+                  { value: "", label: "New top-level genre" },
+                  ...(data?.categories ?? []).filter((c) => !c.parent_id).map((c) => ({ value: c.id, label: c.name })),
+                ]}
+              />
               <Button
                 variant="outline"
                 disabled={busy || !newName.trim()}
