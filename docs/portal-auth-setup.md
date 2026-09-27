@@ -4,9 +4,24 @@ The login integration is scoped to development only. Supabase SMTP,
 invitation-only signup settings, development sign-in URLs, and both email
 templates are configured. Email-link expiry (3600 seconds) and the Cloudflare
 Preview build variables were verified on 2026-09-20. The user authorized
-publishing the prepared login to development. Verify Cloudflare reports a
-successful deployment of this login commit before sending any invitation;
-an email recipient still needs the user's approval.
+publishing the prepared login to development. Commit `124b32f` was successfully
+deployed as `0c6177a5-4999-40fd-b931-1e47a3eb21e2` on 2026-09-20. Signed-out
+visitors were redirected to login from the catalogue and new-release routes;
+an incomplete confirmation URL displayed a recoverable error. Production and
+the archived Lovable branch were verified unchanged. One invitation was sent
+to the explicitly approved test recipient, and the user confirmed that the
+email and sign-in worked. Sign-out and repeat sign-in still need testing.
+Additional recipients require the user's approval.
+
+The user subsequently confirmed that initial invitations should expire after
+72 hours, while regular sign-in links remain valid for 1 hour. This is an agreed
+requirement, not an active configuration. No expiry setting has been changed:
+Supabase's shared expiry remains 3600 seconds. Its current documentation says
+the setting affects all email authentication links, including invitations and
+ordinary sign-in links; over 86400 seconds requires the Management API and is
+strongly discouraged. Do not raise the shared expiry to implement this request.
+
+The separate 72-hour invitation implementation was integrated with Accounts and deployed to the development backend on 2026-09-27. See `docs/admin-workspace-setup.md` and `docs/portal-invitations.md`. Hosted email receipt and redemption still need user verification. The native Supabase invitation button continues to use the one-hour shared setting.
 
 The Supabase MCP entry is configured in Codex, restricted to this project and
 the docs, database, debugging, and development feature groups. The user
@@ -89,8 +104,10 @@ saved it in Supabase themselves. Reopening Supabase's SMTP page confirmed
 custom SMTP enabled with sender `PARASENS <portal@mail.parasens.com>`, host
 `smtp.resend.com`, port `465`, username `resend`, and a 60-second per-user
 interval. Save changes was disabled after loading the persisted settings; the
-saved password was not revealed. SMTP delivery is not yet tested. No emails
-were sent and no website deployment was performed.
+saved password was not revealed. At that stage, SMTP delivery was not yet
+tested and no website deployment had been performed. On 2026-09-20, after the
+development deployment, the user approved one test recipient and confirmed
+that the invitation email and sign-in worked.
 Do not perform login or accept terms on the user's behalf.
 
 Resend's actual generated records for this domain (all TTL Auto, CNAMEs DNS-only):
@@ -114,8 +131,8 @@ served by those nameservers. The earlier unverified Resend entry for
 `notify.parasens.com` is not the chosen sending domain. Do not remove its live
 DNS delegation or buy an upgrade to add the selected domain without approval.
 
-Resend custom SMTP is now configured; verify delivery with an approved test
-recipient after the remaining Auth settings and email templates are configured.
+Resend custom SMTP is configured, and invitation delivery was confirmed by the
+user on 2026-09-20. Repeat sign-in email delivery still needs testing.
 Preserve existing mailbox MX records. Disable link tracking. Store SMTP secrets
 in the Supabase dashboard only, never in website source or VITE variables.
 Supabase's default sender only reaches authorized project-team addresses and
@@ -150,12 +167,7 @@ separate Supabase project for production before artists submit real material.
 
 ## Remaining portal work
 
-The catalogue is explicitly labeled sample data, and the release form does not
-save or upload anything yet. Browser route guards protect navigation only; when
-real data is added, enforce ownership and admin roles using database RLS and
-server-side authorization, including Dropbox downloads. Do not place private
-files or data in this static site's bundle. Account-to-artist mapping stays in
-`TODO.md`. Do not regard login alone as completion of data isolation.
+The admin workspace now persists real releases, files and shared account-to-artist assignments with database access policies. See [admin workspace setup](admin-workspace-setup.md) for verification and remaining hosted-email, upload-limit and production-readiness work.
 
 Sources: [Passwordless email](https://supabase.com/docs/guides/auth/auth-email-passwordless),
 [email templates and scanners](https://supabase.com/docs/guides/auth/auth-email-templates),

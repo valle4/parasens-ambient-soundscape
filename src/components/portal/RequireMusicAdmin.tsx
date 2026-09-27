@@ -11,10 +11,10 @@ export default function RequireMusicAdmin() {
   if (!role.data)
     return (
       <main className="min-h-screen flex flex-col items-center justify-center gap-6 px-6 text-center">
-        <h1 className="font-display text-3xl">Music Library</h1>
+        <h1 className="font-display text-3xl">Admin workspace</h1>
         <p>
           {role.isError
-            ? "The Music Library is not available yet. Please try again after setup."
+            ? "The Admin workspace is not available yet. Please try again after setup."
             : "This area is for invited administrators."}
         </p>
         {role.isError && (

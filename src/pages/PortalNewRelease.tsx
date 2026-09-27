@@ -1,773 +1,785 @@
-import { FormEvent, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, ChevronDown, FileAudio, ImagePlus, Plus, Trash2, Upload } from "lucide-react";
-import { Link } from "react-router-dom";
-import PortalSignOut from "@/components/portal/PortalSignOut";
-
-type ReleaseType = "Single" | "EP" | "Album";
-type FormStep = 1 | 2 | 3;
-type AudioDelivery = "" | "stems" | "stereo" | "both";
-type StereoMixStatus = "" | "rough" | "mixed" | "mastered";
-
-type TrackDraft = {
-  id: number;
-  title: string;
-  composers: string;
-  notes: string;
-  audioDelivery: AudioDelivery;
-  stereoStatus: StereoMixStatus;
-  stereoFiles: string[];
-  stemFiles: string[];
-};
-
-const emptyTrack = (id: number): TrackDraft => ({
-  id,
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { ArrowDown, ArrowUp, Plus, Upload } from "lucide-react";
+import PortalShell, { LoadError } from "@/components/portal/PortalShell";
+import PrivateFile from "@/components/portal/PrivateFile";
+import SearchableSelect from "@/components/music/SearchableSelect";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  artistDirectory,
+  releaseById,
+  releaseFiles,
+  portalRpc,
+  uploadReleaseFile,
+  type Release,
+  type ReleaseContent,
+  type TrackDraft,
+  type PortalFile,
+} from "@/lib/portal/api";
+import { categoryLabel } from "@/lib/music/catalogue";
+const emptyTrack = (): TrackDraft => ({
+  id: crypto.randomUUID(),
   title: "",
   composers: "",
   notes: "",
   audioDelivery: "",
   stereoStatus: "",
-  stereoFiles: [],
-  stemFiles: [],
 });
-
-const fieldClassName =
-  "mt-3 w-full border-0 border-b border-border bg-transparent px-0 py-3 text-sm text-foreground outline-none transition-colors duration-500 placeholder:text-muted-foreground/35 focus:border-foreground";
-
-const labelClassName = "block text-[9px] uppercase tracking-[0.24em] text-muted-foreground";
-
-const formSteps: Array<{ id: FormStep; label: string }> = [
-  { id: 1, label: "Release information" },
-  { id: 2, label: "Artwork" },
-  { id: 3, label: "Tracks" },
-];
-
-const audioDeliveryOptions: Array<{ id: Exclude<AudioDelivery, "">; label: string }> = [
-  { id: "stems", label: "Audio stems only" },
-  { id: "stereo", label: "Stereo mix only" },
-  { id: "both", label: "Stereo mix and stems" },
-];
-
-const stereoStatusOptions: Array<{ id: Exclude<StereoMixStatus, "">; label: string }> = [
-  { id: "rough", label: "Rough / reference mix" },
-  { id: "mixed", label: "Mixed — not mastered" },
-  { id: "mastered", label: "Mixed and mastered" },
-];
-
-// TODO: Replace this prototype list with the artist names assigned to the signed-in account.
-const accountArtists: Array<{ id: string; name: string }> = [];
-
-const PortalNewRelease = () => {
-  const [currentStep, setCurrentStep] = useState<FormStep>(1);
-  const [furthestStep, setFurthestStep] = useState<FormStep>(1);
-  const [releaseType, setReleaseType] = useState<ReleaseType>("Single");
-  const [artistSelection, setArtistSelection] = useState("");
-  const [primaryArtist, setPrimaryArtist] = useState("");
-  const [releaseTitle, setReleaseTitle] = useState("");
-  const [parasensChoosesTitle, setParasensChoosesTitle] = useState(false);
-  const [wantsArtworkMaterial, setWantsArtworkMaterial] = useState(false);
-  const [artworkName, setArtworkName] = useState("");
-  const [tracks, setTracks] = useState<TrackDraft[]>([emptyTrack(1)]);
-  const [nextTrackId, setNextTrackId] = useState(2);
-  const [notice, setNotice] = useState("");
-
-  const updateTrack = (id: number, field: "title" | "composers" | "notes", value: string) => {
-    setTracks((current) =>
-      current.map((track) => (track.id === id ? { ...track, [field]: value } : track)),
-    );
-  };
-
-  const updateTrackDelivery = (id: number, audioDelivery: AudioDelivery) => {
-    setTracks((current) =>
-      current.map((track) => (track.id === id ? { ...track, audioDelivery } : track)),
-    );
-  };
-
-  const updateStereoStatus = (id: number, stereoStatus: StereoMixStatus) => {
-    setTracks((current) =>
-      current.map((track) => (track.id === id ? { ...track, stereoStatus } : track)),
-    );
-  };
-
-  const updateTrackFiles = (
-    id: number,
-    field: "stereoFiles" | "stemFiles",
-    files: FileList | null,
+const blank = (): ReleaseContent => ({
+  releaseTitle: "",
+  releaseType: "Single",
+  parasensChoosesTitle: false,
+  parasensChoosesArtist: false,
+  label: "",
+  genre: "",
+  playlistBrief: "",
+  generalNotes: "",
+  artworkInspiration: "",
+  tracks: [emptyTrack()],
+});
+const labelClass = "block space-y-2 text-xs text-muted-foreground";
+const areaClass =
+  "w-full border border-border bg-background p-3 text-sm text-foreground";
+const steps = ["Release information", "Artwork", "Tracks", "Review"];
+export default function PortalNewRelease() {
+  const [params, setParams] = useSearchParams();
+  const initialId = params.get("draft");
+  const [id, setId] = useState(() => initialId || crypto.randomUUID());
+  const navigate = useNavigate();
+  const cache = useQueryClient();
+  const directory = useQuery({
+    queryKey: ["portal-directory"],
+    queryFn: artistDirectory,
+  });
+  const existing = useQuery({
+    queryKey: ["portal-release", id],
+    enabled: Boolean(initialId),
+    queryFn: () => releaseById(id),
+    refetchOnWindowFocus: false,
+  });
+  const [saved, setSaved] = useState<Release | null>(null);
+  const savedRef = useRef<Release | null>(null);
+  const hydrated = useRef(false);
+  const [content, setContent] = useState<ReleaseContent>(blank);
+  const [artist, setArtist] = useState("");
+  const [suggestion, setSuggestion] = useState("");
+  const [step, setStep] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const [artwork, setArtwork] = useState(false);
+  const previousDraft = useRef(initialId);
+  useEffect(() => {
+    if (initialId === previousDraft.current) return;
+    previousDraft.current = initialId;
+    if (initialId === id) return;
+    setId(initialId || crypto.randomUUID());
+    savedRef.current = null;
+    setSaved(null);
+    hydrated.current = false;
+    setContent(blank());
+    setArtist("");
+    setSuggestion("");
+    setStep(0);
+    setArtwork(false);
+    setDirty(false);
+  }, [initialId, id]);
+  const files = useQuery({
+    queryKey: ["portal-files", id],
+    enabled: Boolean(saved || initialId),
+    queryFn: () => releaseFiles(id),
+    refetchOnWindowFocus: false,
+  });
+  useEffect(() => {
+    if (existing.data && !hydrated.current) {
+      hydrated.current = true;
+      savedRef.current = existing.data;
+      setSaved(existing.data);
+      setContent({ ...blank(), ...existing.data.content });
+      setArtist(
+        existing.data.artist_id ||
+          (existing.data.content.parasensChoosesArtist
+            ? "parasens"
+            : "suggest"),
+      );
+      setSuggestion(existing.data.suggested_artist);
+      setArtwork(Boolean(existing.data.content.artworkInspiration));
+    }
+  }, [existing.data]);
+  useEffect(() => {
+    const before = (e: BeforeUnloadEvent) => {
+      if (dirty || busy) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    const leave = (event: MouseEvent) => {
+      const link =
+        event.target instanceof Element
+          ? (event.target.closest("a[href]") as HTMLAnchorElement | null)
+          : null;
+      if (
+        !link ||
+        (!dirty && !busy) ||
+        link.origin !== window.location.origin ||
+        !link.pathname.startsWith("/portal")
+      )
+        return;
+      if (
+        !window.confirm(
+          busy
+            ? "An upload or save is in progress. Leave this page?"
+            : "Leave this page? Unsaved changes will be lost.",
+        )
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    window.addEventListener("beforeunload", before);
+    document.addEventListener("click", leave, true);
+    return () => {
+      window.removeEventListener("beforeunload", before);
+      document.removeEventListener("click", leave, true);
+    };
+  }, [dirty, busy]);
+  const setField = <K extends keyof ReleaseContent>(
+    key: K,
+    value: ReleaseContent[K],
   ) => {
-    setTracks((current) =>
-      current.map((track) =>
-        track.id === id
-          ? { ...track, [field]: files ? Array.from(files).map((file) => file.name) : [] }
-          : track,
+    setContent((old) => ({ ...old, [key]: value }));
+    setDirty(true);
+  };
+  const setTrack = <K extends keyof TrackDraft>(
+    trackId: string,
+    key: K,
+    value: TrackDraft[K],
+  ) =>
+    setField(
+      "tracks",
+      content.tracks.map((t) =>
+        t.id === trackId ? { ...t, [key]: value } : t,
       ),
     );
+  const save = async () => {
+    const result = await portalRpc<Release>("portal_save_release", {
+      p_id: id,
+      p_revision: savedRef.current?.revision ?? 0,
+      p_artist:
+        artist && artist !== "suggest" && artist !== "parasens" ? artist : null,
+      p_suggestion: artist === "suggest" ? suggestion : "",
+      p_content: { ...content, parasensChoosesArtist: artist === "parasens" },
+    });
+    savedRef.current = result;
+    setSaved(result);
+    hydrated.current = true;
+    setDirty(false);
+    cache.setQueryData(["portal-release", id], result);
+    if (!initialId) setParams({ draft: id }, { replace: true });
+    await cache.invalidateQueries({ queryKey: ["portal-releases"] });
+    return result;
   };
-
-  const addTrack = () => {
-    setTracks((current) => [...current, emptyTrack(nextTrackId)]);
-    setNextTrackId((current) => current + 1);
-  };
-
-  const removeTrack = (id: number) => {
-    setTracks((current) => current.filter((track) => track.id !== id));
-  };
-
-  const saveDraft = () => {
-    setNotice("Draft saving will be connected when we build the database.");
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (currentStep < 3) {
-      const nextStep = (currentStep + 1) as FormStep;
-      setCurrentStep(nextStep);
-      setFurthestStep((current) => (current < nextStep ? nextStep : current));
-      setNotice("");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
+  const run = async (fn: () => Promise<void>) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await fn();
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Could not save. Please retry.",
+      );
+    } finally {
+      setBusy(false);
+      setProgress("");
     }
-
-    setNotice("The review step will be connected next. Nothing has been submitted.");
   };
-
-  const goToStep = (step: FormStep) => {
-    if (step > furthestStep) return;
-    setCurrentStep(step);
-    setNotice("");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const upload = (
+    trackId: string | null,
+    kind: PortalFile["kind"],
+    selected: FileList | null,
+  ) => {
+    if (!selected?.length) return;
+    const batch = Array.from(selected);
+    void run(async () => {
+      await save();
+      try {
+        for (let i = 0; i < batch.length; i++) {
+          setProgress(
+            `Uploading ${i + 1} of ${batch.length}: ${batch[i].name}`,
+          );
+          await uploadReleaseFile(id, trackId, kind, batch[i]);
+        }
+        toast.success("Files uploaded.");
+      } finally {
+        await files.refetch();
+      }
+    });
   };
-
-  const goBack = () => {
-    if (currentStep === 1) return;
-    goToStep((currentStep - 1) as FormStep);
+  const chooseArtist = (value: string) => {
+    setArtist(value);
+    setDirty(true);
+    const chosen = directory.data?.artists.find((a) => a.id === value);
+    if (chosen) {
+      const label =
+        directory.data?.labels.find((l) => l.id === chosen.label_id)?.name ??
+        "";
+      const genre =
+        directory.data?.links
+          .filter((g) => g.artist_id === value)
+          .map((g) =>
+            directory.data?.genres.find((c) => c.id === g.category_id),
+          )
+          .filter(Boolean)
+          .map((c) => categoryLabel(c!, directory.data!.genres))
+          .join(", ") ?? "";
+      setContent((old) => ({ ...old, label, genre }));
+    }
   };
-
-  const continueLabel =
-    currentStep === 1
-      ? "Continue to artwork"
-      : currentStep === 2
-        ? "Continue to tracks"
-        : "Continue to review";
-
-  const isCustomArtist = artistSelection === "custom";
-  const parasensChoosesArtist = artistSelection === "parasens";
-
-  return (
-    <main className="relative min-h-screen overflow-hidden bg-background px-6 py-6 text-foreground md:px-12 md:py-8 lg:px-24">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,hsl(var(--foreground)/0.035),transparent_34%)]" />
-
-      <header className="relative z-10 flex items-center justify-between border-b border-border pb-6 opacity-0 animate-fade-in">
-        <Link
-          to="/"
-          aria-label="Return to the Parasens website"
-          className="font-display text-base font-semibold tracking-[0.18em] transition-opacity duration-500 hover:opacity-60 md:text-lg"
-        >
-          PARASENS
-        </Link>
-
-        <div className="flex items-center gap-5 md:gap-8">
-          <span className="hidden text-[10px] uppercase tracking-[0.28em] text-muted-foreground sm:inline">
-            Artist portal
+  const fileSection = (trackId: string | null, kind: PortalFile["kind"]) => (
+    <div className="space-y-3">
+      <label className="flex cursor-pointer items-center gap-3 border border-dashed border-border p-5 text-xs hover:border-foreground">
+        <Upload aria-hidden="true" className="h-4 w-4" />
+        <span>
+          {kind === "artwork"
+            ? "Choose artwork or references"
+            : kind === "stereo"
+              ? "Choose stereo mix"
+              : "Choose stems or ZIP"}
+          <span className="mt-1 block text-muted-foreground">
+            {kind === "artwork"
+              ? "JPG, PNG or PDF"
+              : kind === "stereo"
+                ? "WAV, AIFF or FLAC"
+                : "WAV, AIFF, FLAC or ZIP"}
+            {" · Up to 50 MB per file"}
           </span>
-          <span className="hidden h-4 w-px bg-border sm:block" />
-          <PortalSignOut />
-        </div>
-      </header>
-
-      <form
-        onSubmit={handleSubmit}
-        className="relative z-10 mx-auto w-full max-w-6xl pb-24 pt-12 opacity-0 animate-fade-up animation-delay-200 md:pt-16"
-      >
-        <Link
-          to="/portal/dashboard"
-          className="group inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-muted-foreground transition-colors duration-500 hover:text-foreground"
-        >
-          <ArrowLeft
-            aria-hidden="true"
-            className="h-3.5 w-3.5 transition-transform duration-500 group-hover:-translate-x-1"
-            strokeWidth={1.5}
-          />
-          Catalogue
-        </Link>
-
-        <div className="mt-12 max-w-2xl md:mt-16">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">New release</p>
-          <h1 className="mt-5 font-display text-4xl font-medium tracking-[-0.025em] md:text-6xl">
-            Tell us about the music.
-          </h1>
-          <p className="mt-5 max-w-lg text-sm font-light leading-6 text-muted-foreground">
-            Start a draft now. You can review everything before it is submitted to PARASENS.
-          </p>
-        </div>
-
-        <nav aria-label="Release form progress" className="mt-14 border-y border-border md:mt-20">
-          <ol className="grid grid-cols-3">
-            {formSteps.map((step) => {
-              const isCurrent = currentStep === step.id;
-              const isAvailable = step.id <= furthestStep;
-              const isComplete = step.id < furthestStep;
-
-              return (
-                <li key={step.id} className="border-r border-border last:border-r-0">
-                  <button
-                    type="button"
-                    disabled={!isAvailable}
-                    aria-current={isCurrent ? "step" : undefined}
-                    onClick={() => goToStep(step.id)}
-                    className={`relative flex min-h-20 w-full flex-col justify-center px-3 py-4 text-left transition-colors duration-500 sm:px-5 md:min-h-24 md:px-7 ${
-                      isCurrent
-                        ? "bg-foreground/[0.035] text-foreground"
-                        : isAvailable
-                          ? "text-muted-foreground hover:text-foreground"
-                          : "cursor-not-allowed text-muted-foreground/35"
-                    }`}
-                  >
-                    <span className="text-[9px] tracking-[0.22em]">0{step.id}</span>
-                    <span className="mt-2 hidden text-[9px] uppercase tracking-[0.16em] sm:block md:text-[10px]">
-                      {step.label}
-                    </span>
-                    <span className="mt-2 text-[8px] uppercase tracking-[0.14em] text-muted-foreground sm:hidden">
-                      {step.id === 1 ? "Release" : step.label}
-                    </span>
-                    {isComplete && (
-                      <span className="absolute right-3 top-3 h-1.5 w-1.5 rounded-full bg-foreground md:right-5 md:top-5" />
-                    )}
-                    <span
-                      className={`absolute bottom-0 left-0 h-px bg-foreground transition-all duration-500 ${
-                        isCurrent ? "w-full opacity-100" : "w-0 opacity-0"
-                      }`}
-                    />
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-        </nav>
-
-        <section
-          className={`${currentStep === 1 ? "block animate-fade-up" : "hidden"} mt-16 md:mt-20`}
-        >
-          <div className="grid gap-10 lg:grid-cols-[0.34fr_1fr] lg:gap-20">
-            <div>
-              <p className="text-[9px] uppercase tracking-[0.28em] text-muted-foreground">01</p>
-              <h2 className="mt-4 font-display text-2xl tracking-[-0.02em]">Release information</h2>
-              <p className="mt-4 max-w-xs text-xs font-light leading-5 text-muted-foreground">
-                The information that applies to the release as a whole.
+        </span>
+        <input
+          className="sr-only"
+          aria-label={`${kind} files${trackId ? ` for ${content.tracks.find((t) => t.id === trackId)?.title || "track"}` : ""}`}
+          type="file"
+          accept={
+            kind === "artwork"
+              ? ".jpg,.jpeg,.png,.pdf"
+              : kind === "stereo"
+                ? ".wav,.aif,.aiff,.flac"
+                : ".wav,.aif,.aiff,.flac,.zip"
+          }
+          multiple={kind !== "stereo"}
+          onChange={(e) => {
+            upload(trackId, kind, e.target.files);
+            e.target.value = "";
+          }}
+        />
+      </label>
+      {files.data
+        ?.filter((f) => f.track_id === trackId && f.kind === kind)
+        .map((f) => (
+          <div key={f.id} className="space-y-2">
+            {f.uploaded ? (
+              <PrivateFile file={f} />
+            ) : (
+              <p role="alert" className="text-xs">
+                {f.name}: upload not completed. Remove this entry and upload it
+                again.
               </p>
-            </div>
-
-            <div className="grid gap-x-10 gap-y-10 md:grid-cols-2">
-              <div>
-                <label htmlFor="primary-artist-selection" className={labelClassName}>
-                  Primary artist
-                </label>
-                <div className="relative">
-                  <select
-                    id="primary-artist-selection"
-                    name="primaryArtistSelection"
-                    required={currentStep === 1}
-                    value={artistSelection}
-                    onChange={(event) => setArtistSelection(event.target.value)}
-                    className={`${fieldClassName} appearance-none pr-10 text-muted-foreground focus:text-foreground`}
-                  >
-                    <option value="" disabled>
-                      Choose an artist
-                    </option>
-                    {accountArtists.map((artist) => (
-                      <option key={artist.id} value={artist.id}>
-                        {artist.name}
-                      </option>
-                    ))}
-                    <option value="custom">Enter another artist name</option>
-                    <option value="parasens">Ask PARASENS to decide</option>
-                  </select>
-                  <ChevronDown
-                    aria-hidden="true"
-                    className="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/4 text-muted-foreground"
-                    strokeWidth={1.25}
+            )}
+            <button
+              type="button"
+              className="text-xs underline"
+              onClick={() =>
+                run(async () => {
+                  await portalRpc("portal_remove_file", { p_id: f.id });
+                  await files.refetch();
+                })
+              }
+            >
+              Remove {f.name}
+            </button>
+          </div>
+        ))}
+    </div>
+  );
+  if (initialId && existing.isPending)
+    return (
+      <PortalShell title="Upload music">
+        <p role="status">Loading draft…</p>
+      </PortalShell>
+    );
+  if (existing.isError)
+    return (
+      <PortalShell title="Upload music">
+        <LoadError retry={() => existing.refetch()} />
+      </PortalShell>
+    );
+  if (saved && saved.status !== "draft" && !saved.awaiting_changes)
+    return (
+      <PortalShell title="Release submitted">
+        <Link to={`/portal/releases/${id}`} className="underline">
+          View this release and its review
+        </Link>
+      </PortalShell>
+    );
+  return (
+    <PortalShell
+      title={
+        saved?.awaiting_changes
+          ? "Update your release"
+          : "Tell us about the music."
+      }
+      description="Save a draft at any time. Review the release before submitting it to PARASENS."
+    >
+      {directory.isError && <LoadError retry={() => directory.refetch()} />}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void run(async () => {
+            const current = await save();
+            if (step < 3) {
+              setStep(step + 1);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            } else {
+              await portalRpc("portal_submit_release", {
+                p_id: id,
+                p_revision: current.revision,
+              });
+              await cache.invalidateQueries({ queryKey: ["portal-releases"] });
+              await cache.invalidateQueries({
+                queryKey: ["portal-release", id],
+              });
+              toast.success("Release submitted.");
+              navigate(`/portal/releases/${id}`);
+            }
+          });
+        }}
+      >
+        <fieldset disabled={busy} className="space-y-8">
+          <legend className="sr-only">Release upload</legend>
+          <nav
+            aria-label="Upload progress"
+            className="grid grid-cols-4 border-y border-border"
+          >
+            {steps.map((label, index) => (
+              <button
+                type="button"
+                key={label}
+                aria-current={step === index ? "step" : undefined}
+                className={`border-r border-border px-2 py-5 text-left text-[10px] last:border-0 sm:px-5 ${step === index ? "bg-foreground/[.05] text-foreground" : "text-muted-foreground"}`}
+                onClick={() => setStep(index)}
+              >
+                <span className="block">0{index + 1}</span>
+                <span className="mt-2 block">{label}</span>
+              </button>
+            ))}
+          </nav>
+          {step === 0 && (
+            <section className="grid gap-7 md:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Primary artist</p>
+                <SearchableSelect
+                  label="Primary artist"
+                  value={artist}
+                  onValueChange={chooseArtist}
+                  disabled={Boolean(saved && saved.status !== "draft")}
+                  options={[
+                    { value: "", label: "Choose an artist" },
+                    ...(directory.data?.artists ?? []).map((a) => ({
+                      value: a.id,
+                      label: a.name,
+                    })),
+                    { value: "suggest", label: "Suggest a new artist name" },
+                    { value: "parasens", label: "Ask PARASENS to decide" },
+                  ]}
+                />
+                {artist === "suggest" && (
+                  <Input
+                    aria-label="Suggested artist name"
+                    required
+                    maxLength={120}
+                    placeholder="Suggested artist name"
+                    value={suggestion}
+                    onChange={(e) => {
+                      setSuggestion(e.target.value);
+                      setDirty(true);
+                    }}
                   />
-                </div>
-
-                {isCustomArtist && (
-                  <div className="mt-6 animate-fade-up">
-                    <label htmlFor="primary-artist-custom" className={labelClassName}>
-                      Enter artist name
-                    </label>
-                    <input
-                      id="primary-artist-custom"
-                      name="primaryArtist"
-                      required={currentStep === 1}
-                      value={primaryArtist}
-                      onChange={(event) => setPrimaryArtist(event.target.value)}
-                      placeholder="Artist name"
-                      className={fieldClassName}
-                    />
-                  </div>
                 )}
-
-                {parasensChoosesArtist && (
-                  <p className="mt-4 text-xs font-light leading-5 text-muted-foreground">
-                    PARASENS will propose the artist name before the release is submitted.
+                {artist === "parasens" && (
+                  <p className="text-xs text-muted-foreground">
+                    PARASENS will choose and approve an artist name during
+                    review.
                   </p>
                 )}
               </div>
-
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <label htmlFor="release-title" className={labelClassName}>
-                    Release title
-                  </label>
-                  <button
-                    type="button"
-                    aria-pressed={parasensChoosesTitle}
-                    onClick={() => setParasensChoosesTitle((current) => !current)}
-                    className={`shrink-0 border-b pb-1 text-[8px] uppercase tracking-[0.16em] transition-colors duration-300 ${
-                      parasensChoosesTitle
-                        ? "border-foreground text-foreground"
-                        : "border-border text-muted-foreground hover:border-foreground/60 hover:text-foreground"
-                    }`}
-                  >
-                    {parasensChoosesTitle ? "PARASENS will decide" : "Ask PARASENS to decide"}
-                  </button>
-                </div>
-                <input
-                  id="release-title"
-                  name="releaseTitle"
-                  required={currentStep === 1 && !parasensChoosesTitle}
-                  disabled={parasensChoosesTitle}
-                  value={parasensChoosesTitle ? "" : releaseTitle}
-                  onChange={(event) => setReleaseTitle(event.target.value)}
-                  placeholder={parasensChoosesTitle ? "PARASENS will propose the release title" : "Title of the release"}
-                  className={`${fieldClassName} disabled:cursor-not-allowed disabled:text-muted-foreground`}
+              <div className="space-y-3">
+                <label className={labelClass}>
+                  <span>Release title</span>
+                  <Input
+                    required={!content.parasensChoosesTitle}
+                    disabled={content.parasensChoosesTitle}
+                    maxLength={500}
+                    value={content.releaseTitle}
+                    onChange={(e) => setField("releaseTitle", e.target.value)}
+                    placeholder={
+                      content.parasensChoosesTitle
+                        ? "PARASENS will decide"
+                        : "Title of the release"
+                    }
+                  />
+                </label>
+                <label className="flex items-center gap-2 text-xs">
+                  <Checkbox
+                    checked={content.parasensChoosesTitle}
+                    onCheckedChange={(v) =>
+                      setField("parasensChoosesTitle", v === true)
+                    }
+                  />
+                  Ask PARASENS to decide the title
+                </label>
+              </div>
+              <label className={labelClass}>
+                <span>Label</span>
+                <Input
+                  value={content.label}
+                  onChange={(e) => setField("label", e.target.value)}
+                  placeholder="Label for this release"
                 />
-                <input
-                  type="hidden"
-                  name="releaseTitleDecision"
-                  value={parasensChoosesTitle ? "parasens" : "artist"}
+              </label>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Release type</p>
+                <SearchableSelect
+                  label="Release type"
+                  value={content.releaseType}
+                  onValueChange={(v) =>
+                    setField("releaseType", v as ReleaseContent["releaseType"])
+                  }
+                  options={["Single", "EP", "Album"].map((value) => ({
+                    value,
+                    label: value,
+                  }))}
                 />
               </div>
-
-              <label className={labelClassName}>
-                Label
-                <input
-                  name="label"
-                  required={currentStep === 1}
-                  placeholder="Which label is this release for?"
-                  className={`${fieldClassName} placeholder:text-muted-foreground/70`}
-                />
-              </label>
-
-              <fieldset>
-                <legend className={labelClassName}>Release type</legend>
-                <div className="mt-3 grid grid-cols-3 border border-border">
-                  {(["Single", "EP", "Album"] as ReleaseType[]).map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      aria-pressed={releaseType === type}
-                      onClick={() => setReleaseType(type)}
-                      className={`border-r border-border px-3 py-3 text-[10px] uppercase tracking-[0.16em] transition-colors duration-300 last:border-r-0 ${
-                        releaseType === type
-                          ? "bg-foreground text-background"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-                <input type="hidden" name="releaseType" value={releaseType} />
-              </fieldset>
-
-              <label className={labelClassName}>
-                Genre
-                <input
-                  name="genre"
-                  required={currentStep === 1}
+              <label className={labelClass}>
+                <span>Genre</span>
+                <Input
+                  value={content.genre}
+                  onChange={(e) => setField("genre", e.target.value)}
                   placeholder="e.g. Ambient"
-                  className={fieldClassName}
                 />
               </label>
-
-              <label className={labelClassName}>
-                Playlist / Brief
-                <input
-                  name="playlistBrief"
+              <label className={labelClass}>
+                <span>Playlist / Brief</span>
+                <Input
+                  value={content.playlistBrief}
+                  onChange={(e) => setField("playlistBrief", e.target.value)}
                   placeholder="Optional playlist or brief"
-                  className={fieldClassName}
                 />
               </label>
-
-              <label className={`md:col-span-2 ${labelClassName}`}>
-                General notes
+              <label className={`${labelClass} md:col-span-2`}>
+                <span>General notes</span>
                 <textarea
-                  name="generalNotes"
-                  rows={4}
-                  placeholder="Anything else you would like us to know about the release"
-                  className={`${fieldClassName} resize-none leading-6`}
+                  rows={3}
+                  maxLength={10000}
+                  className={areaClass}
+                  value={content.generalNotes}
+                  onChange={(e) => setField("generalNotes", e.target.value)}
                 />
               </label>
-            </div>
-          </div>
-        </section>
-
-        <section
-          className={`${currentStep === 2 ? "block animate-fade-up" : "hidden"} mt-16 md:mt-20`}
-        >
-          <div className="grid gap-10 lg:grid-cols-[0.34fr_1fr] lg:gap-20">
-            <div>
-              <p className="text-[9px] uppercase tracking-[0.28em] text-muted-foreground">02</p>
-              <h2 className="mt-4 font-display text-2xl tracking-[-0.02em]">Artwork</h2>
-              <p className="mt-4 max-w-xs text-xs font-light leading-5 text-muted-foreground">
+            </section>
+          )}
+          {step === 1 && (
+            <section className="space-y-6">
+              <h2 className="font-display text-2xl">Artwork</h2>
+              <p className="text-sm text-muted-foreground">
                 You do not need to provide artwork.
               </p>
-            </div>
-
-            <div>
-              <label className="group flex cursor-pointer items-start gap-5 border border-border p-5 transition-colors duration-500 hover:border-foreground/50 md:p-7">
-                <input
-                  type="checkbox"
-                  name="provideArtworkMaterial"
-                  checked={wantsArtworkMaterial}
-                  onChange={(event) => {
-                    setWantsArtworkMaterial(event.target.checked);
-                    if (!event.target.checked) setArtworkName("");
-                  }}
-                  className="sr-only"
+              <label className="flex items-center gap-3 text-sm">
+                <Checkbox
+                  checked={
+                    artwork ||
+                    Boolean(files.data?.some((f) => f.kind === "artwork"))
+                  }
+                  onCheckedChange={(v) => setArtwork(v === true)}
                 />
-                <span
-                  aria-hidden="true"
-                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center border transition-colors duration-300 ${
-                    wantsArtworkMaterial
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-muted-foreground/60 group-hover:border-foreground"
-                  }`}
-                >
-                  {wantsArtworkMaterial && <Check className="h-3 w-3" strokeWidth={2} />}
-                </span>
-                <span>
-                  <span className="block text-[10px] uppercase tracking-[0.2em] text-foreground">
-                    I want to submit artwork or visual references
-                  </span>
-                  <span className="mt-2 block text-xs font-light leading-5 text-muted-foreground">
-                    If you already have artwork or visual ideas, you can share them here.
-                  </span>
-                </span>
+                I want to submit artwork or visual references
               </label>
-
-              {wantsArtworkMaterial && (
-                <div className="mt-8 grid animate-fade-up gap-10 md:grid-cols-2">
-                  <label className="group flex min-h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-border px-6 py-8 text-center transition-colors duration-500 hover:border-foreground/60">
-                    <ImagePlus
-                      aria-hidden="true"
-                      className="h-5 w-5 text-muted-foreground"
-                      strokeWidth={1.25}
-                    />
-                    <span className="mt-4 text-[10px] uppercase tracking-[0.2em]">
-                      {artworkName || "Choose artwork or references"}
-                    </span>
-                    <span className="mt-2 text-[10px] text-muted-foreground">JPG, PNG or PDF</span>
-                    <input
-                      type="file"
-                      name="artwork"
-                      accept="image/jpeg,image/png,application/pdf"
-                      className="sr-only"
-                      onChange={(event) => setArtworkName(event.target.files?.[0]?.name || "")}
-                    />
-                  </label>
-
-                  <label className={labelClassName}>
-                    Artwork inspiration
+              {(artwork || files.data?.some((f) => f.kind === "artwork")) && (
+                <div className="grid gap-6 md:grid-cols-2">
+                  {fileSection(null, "artwork")}
+                  <label className={labelClass}>
+                    <span>Artwork inspiration</span>
                     <textarea
-                      name="artworkInspiration"
-                      rows={6}
-                      placeholder="Describe the visual direction or paste reference links"
-                      className={`${fieldClassName} resize-none leading-6`}
+                      rows={5}
+                      maxLength={10000}
+                      className={areaClass}
+                      value={content.artworkInspiration}
+                      onChange={(e) =>
+                        setField("artworkInspiration", e.target.value)
+                      }
+                      placeholder="Visual direction or reference links"
                     />
                   </label>
                 </div>
               )}
-            </div>
-          </div>
-        </section>
-
-        <section
-          className={`${currentStep === 3 ? "block animate-fade-up" : "hidden"} mt-16 md:mt-20`}
-        >
-          <div className="grid gap-10 lg:grid-cols-[0.34fr_1fr] lg:gap-20">
-            <div>
-              <p className="text-[9px] uppercase tracking-[0.28em] text-muted-foreground">03</p>
-              <h2 className="mt-4 font-display text-2xl tracking-[-0.02em]">Tracks</h2>
-              <p className="mt-4 max-w-xs text-xs font-light leading-5 text-muted-foreground">
-                Add the track information and choose which audio files you are providing.
-              </p>
-            </div>
-
-            <div>
-              <div className="space-y-6">
-                {tracks.map((track, index) => {
-                  const requiresStereo =
-                    track.audioDelivery === "stereo" || track.audioDelivery === "both";
-                  const requiresStems =
-                    track.audioDelivery === "stems" || track.audioDelivery === "both";
-
-                  return (
-                  <fieldset key={track.id} className="border border-border p-5 md:p-8">
-                    <legend className="sr-only">Track {index + 1}</legend>
-                    <div className="flex items-center justify-between border-b border-border pb-5">
-                      <span className="text-[10px] uppercase tracking-[0.24em]">Track {index + 1}</span>
-                      {tracks.length > 1 && (
+            </section>
+          )}
+          {step === 2 && (
+            <section className="space-y-6">
+              <h2 className="font-display text-2xl">Tracks</h2>
+              {content.tracks.map((track, index) => (
+                <div
+                  key={track.id}
+                  className="space-y-6 border border-border p-5 md:p-7"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <h3 className="text-sm">Track {index + 1}</h3>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        aria-label={`Move track ${index + 1} up`}
+                        disabled={index === 0}
+                        onClick={() => {
+                          const next = [...content.tracks];
+                          [next[index - 1], next[index]] = [
+                            next[index],
+                            next[index - 1],
+                          ];
+                          setField("tracks", next);
+                        }}
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Move track ${index + 1} down`}
+                        disabled={index === content.tracks.length - 1}
+                        onClick={() => {
+                          const next = [...content.tracks];
+                          [next[index + 1], next[index]] = [
+                            next[index],
+                            next[index + 1],
+                          ];
+                          setField("tracks", next);
+                        }}
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </button>
+                      {content.tracks.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => removeTrack(track.id)}
-                          className="inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.18em] text-muted-foreground transition-colors duration-300 hover:text-foreground"
+                          className="text-xs underline"
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                "Remove this track from the release?",
+                              )
+                            )
+                              setField(
+                                "tracks",
+                                content.tracks.filter((t) => t.id !== track.id),
+                              );
+                          }}
                         >
                           Remove
-                          <Trash2 aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.25} />
                         </button>
                       )}
                     </div>
-
-                    <div className="mt-7 grid gap-x-10 gap-y-9 md:grid-cols-2">
-                      <label className={labelClassName}>
-                        Track title
-                        <input
-                          name={`track-${track.id}-title`}
-                          required={currentStep === 3}
-                          value={track.title}
-                          onChange={(event) => updateTrack(track.id, "title", event.target.value)}
-                          placeholder="Title"
-                          className={fieldClassName}
-                        />
-                      </label>
-
-                      <label className={labelClassName}>
-                        Songwriters / composers
-                        <input
-                          name={`track-${track.id}-composers`}
-                          required={currentStep === 3}
-                          value={track.composers}
-                          onChange={(event) => updateTrack(track.id, "composers", event.target.value)}
-                          placeholder="Full legal name / PRO Pseudonym"
-                          className={fieldClassName}
-                        />
-                      </label>
-
-                      <fieldset className="md:col-span-2">
-                        <legend className={labelClassName}>What files are you providing?</legend>
-                        <div className="mt-3 grid border border-border md:grid-cols-3">
-                          {audioDeliveryOptions.map((option) => (
-                            <label
-                              key={option.id}
-                              className={`cursor-pointer border-b border-border px-4 py-4 text-[9px] uppercase tracking-[0.16em] transition-colors duration-300 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0 ${
-                                track.audioDelivery === option.id
-                                  ? "bg-foreground text-background"
-                                  : "text-muted-foreground hover:text-foreground"
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name={`track-${track.id}-audio-delivery`}
-                                value={option.id}
-                                checked={track.audioDelivery === option.id}
-                                required={currentStep === 3}
-                                onChange={() => updateTrackDelivery(track.id, option.id)}
-                                className="sr-only"
-                              />
-                              {option.label}
-                            </label>
-                          ))}
-                        </div>
-                        <p className="mt-3 text-[10px] leading-4 text-muted-foreground">
-                          At least one audio format is required. If you provide stems, a stereo mix is optional.
-                        </p>
-                      </fieldset>
-
-                      <div className="grid gap-5 md:col-span-2 md:grid-cols-2">
-                        <label className="group flex min-h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-border px-5 py-7 text-center transition-colors duration-500 hover:border-foreground/60">
-                          <span className="absolute sr-only">
-                            Stereo mix {requiresStereo ? "required" : "optional"}
-                          </span>
-                          {track.stereoFiles.length > 0 ? (
-                            <FileAudio
-                              aria-hidden="true"
-                              className="h-5 w-5 text-foreground"
-                              strokeWidth={1.25}
-                            />
-                          ) : (
-                            <Upload
-                              aria-hidden="true"
-                              className="h-5 w-5 text-muted-foreground"
-                              strokeWidth={1.25}
-                            />
-                          )}
-                          <span className="mt-4 text-[10px] uppercase tracking-[0.2em]">
-                            {track.stereoFiles.length > 0 ? track.stereoFiles[0] : "Choose stereo mix"}
-                          </span>
-                          <span className="mt-2 text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
-                            {track.audioDelivery ? (requiresStereo ? "Required" : "Optional") : "Select above"}
-                          </span>
-                          <span className="mt-2 text-[10px] text-muted-foreground">WAV, AIFF or FLAC</span>
-                          <input
-                            type="file"
-                            name={`track-${track.id}-stereo`}
-                            accept="audio/*,.wav,.aiff,.aif,.flac"
-                            required={currentStep === 3 && requiresStereo}
-                            className="sr-only"
-                            onChange={(event) =>
-                              updateTrackFiles(track.id, "stereoFiles", event.target.files)
-                            }
-                          />
-                        </label>
-
-                        <label className="group flex min-h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-border px-5 py-7 text-center transition-colors duration-500 hover:border-foreground/60">
-                          <span className="absolute sr-only">
-                            Audio stems {requiresStems ? "required" : "optional"}
-                          </span>
-                          {track.stemFiles.length > 0 ? (
-                            <FileAudio
-                              aria-hidden="true"
-                              className="h-5 w-5 text-foreground"
-                              strokeWidth={1.25}
-                            />
-                          ) : (
-                            <Upload
-                              aria-hidden="true"
-                              className="h-5 w-5 text-muted-foreground"
-                              strokeWidth={1.25}
-                            />
-                          )}
-                          <span className="mt-4 text-[10px] uppercase tracking-[0.2em]">
-                            {track.stemFiles.length > 0
-                              ? `${track.stemFiles.length} stem file${track.stemFiles.length === 1 ? "" : "s"} selected`
-                              : "Choose audio stems"}
-                          </span>
-                          <span className="mt-2 text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
-                            {track.audioDelivery ? (requiresStems ? "Required" : "Optional") : "Select above"}
-                          </span>
-                          <span className="mt-2 max-w-xs text-[10px] leading-4 text-muted-foreground">
-                            Select multiple files or one ZIP archive
-                          </span>
-                          <input
-                            type="file"
-                            name={`track-${track.id}-stems`}
-                            accept="audio/*,.wav,.aiff,.aif,.flac,.zip"
-                            multiple
-                            required={currentStep === 3 && requiresStems}
-                            className="sr-only"
-                            onChange={(event) =>
-                              updateTrackFiles(track.id, "stemFiles", event.target.files)
-                            }
-                          />
-                        </label>
-                      </div>
-
-                      {requiresStereo && (
-                        <fieldset className="animate-fade-up md:col-span-2">
-                          <legend className={labelClassName}>Stereo mix status</legend>
-                          <div className="mt-3 grid border border-border md:grid-cols-3">
-                            {stereoStatusOptions.map((option) => (
-                              <label
-                                key={option.id}
-                                className={`cursor-pointer border-b border-border px-4 py-4 text-[9px] uppercase tracking-[0.16em] transition-colors duration-300 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0 ${
-                                  track.stereoStatus === option.id
-                                    ? "bg-foreground text-background"
-                                    : "text-muted-foreground hover:text-foreground"
-                                }`}
-                              >
-                                <input
-                                  type="radio"
-                                  name={`track-${track.id}-stereo-status`}
-                                  value={option.id}
-                                  checked={track.stereoStatus === option.id}
-                                  required={currentStep === 3}
-                                  onChange={() => updateStereoStatus(track.id, option.id)}
-                                  className="sr-only"
-                                />
-                                {option.label}
-                              </label>
-                            ))}
-                          </div>
-                        </fieldset>
-                      )}
-
-                      <label className={`md:col-span-2 ${labelClassName}`}>
-                        Track-specific notes
-                        <textarea
-                          name={`track-${track.id}-notes`}
-                          rows={3}
-                          value={track.notes}
-                          onChange={(event) => updateTrack(track.id, "notes", event.target.value)}
-                          placeholder="Mix notes, featured artists, versions, or anything specific to this track"
-                          className={`${fieldClassName} resize-none leading-6`}
-                        />
-                      </label>
+                  </div>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <label className={labelClass}>
+                      <span>Track title</span>
+                      <Input
+                        required
+                        value={track.title}
+                        maxLength={500}
+                        placeholder="Title"
+                        onChange={(e) =>
+                          setTrack(track.id, "title", e.target.value)
+                        }
+                      />
+                    </label>
+                    <label className={labelClass}>
+                      <span>Songwriters / composers</span>
+                      <Input
+                        required
+                        value={track.composers}
+                        maxLength={2000}
+                        placeholder="Full legal name / PRO Pseudonym"
+                        onChange={(e) =>
+                          setTrack(track.id, "composers", e.target.value)
+                        }
+                      />
+                    </label>
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        What files are you providing?
+                      </p>
+                      <SearchableSelect
+                        label={`Audio delivery for track ${index + 1}`}
+                        value={track.audioDelivery}
+                        onValueChange={(v) =>
+                          setTrack(
+                            track.id,
+                            "audioDelivery",
+                            v as TrackDraft["audioDelivery"],
+                          )
+                        }
+                        options={[
+                          { value: "", label: "Choose audio delivery" },
+                          { value: "stems", label: "Audio stems only" },
+                          { value: "stereo", label: "Stereo mix only" },
+                          { value: "both", label: "Stereo mix and stems" },
+                        ]}
+                      />
                     </div>
-                  </fieldset>
-                  );
-                })}
-              </div>
-
-              <button
+                    {track.audioDelivery !== "stems" && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                          Stereo mix status
+                        </p>
+                        <SearchableSelect
+                          label={`Stereo mix status for track ${index + 1}`}
+                          value={track.stereoStatus}
+                          onValueChange={(v) =>
+                            setTrack(
+                              track.id,
+                              "stereoStatus",
+                              v as TrackDraft["stereoStatus"],
+                            )
+                          }
+                          options={[
+                            { value: "", label: "Choose mix status" },
+                            { value: "rough", label: "Rough / reference mix" },
+                            { value: "mixed", label: "Mixed — not mastered" },
+                            { value: "mastered", label: "Mixed and mastered" },
+                          ]}
+                        />
+                      </div>
+                    )}
+                    {fileSection(track.id, "stereo")}
+                    {fileSection(track.id, "stems")}
+                    <label className={`${labelClass} md:col-span-2`}>
+                      <span>Track-specific notes</span>
+                      <textarea
+                        rows={3}
+                        maxLength={10000}
+                        className={areaClass}
+                        value={track.notes}
+                        onChange={(e) =>
+                          setTrack(track.id, "notes", e.target.value)
+                        }
+                      />
+                    </label>
+                  </div>
+                </div>
+              ))}
+              <Button
                 type="button"
-                onClick={addTrack}
-                className="group mt-6 flex w-full items-center justify-center gap-3 border border-border px-5 py-4 text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors duration-500 hover:border-foreground/60 hover:text-foreground"
+                variant="outline"
+                disabled={content.tracks.length >= 100}
+                onClick={() =>
+                  setField("tracks", [...content.tracks, emptyTrack()])
+                }
               >
-                <Plus aria-hidden="true" className="h-4 w-4" strokeWidth={1.25} />
+                <Plus className="mr-2 h-4 w-4" />
                 Add another track
-              </button>
+              </Button>
+            </section>
+          )}
+          {step === 3 && (
+            <section className="space-y-5">
+              <h2 className="font-display text-2xl">Review your release</h2>
+              <div className="border border-border p-6">
+                <h3 className="font-display text-xl">
+                  {content.parasensChoosesTitle
+                    ? "Title to be chosen by PARASENS"
+                    : content.releaseTitle || "Untitled release"}
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {directory.data?.artists.find((a) => a.id === artist)?.name ||
+                    (artist === "suggest"
+                      ? suggestion
+                      : "Artist to be confirmed")}{" "}
+                  · {content.releaseType}
+                </p>
+                <div className="mt-5 space-y-4">
+                  {content.tracks.map((track, index) => (
+                    <div key={track.id}>
+                      <p className="text-sm">
+                        {index + 1}. {track.title || "Untitled track"}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {track.composers || "Songwriter names missing"} ·{" "}
+                        {files.data?.filter(
+                          (f) => f.track_id === track.id && f.uploaded,
+                        ).length ?? 0}{" "}
+                        uploaded files
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                After submitting, you can follow the review and exchange
+                messages in your release page. Editing opens again when changes
+                are requested.
+              </p>
+            </section>
+          )}
+          <footer className="flex flex-wrap items-center justify-between gap-5 border-t border-border pt-6">
+            <div role="status" className="text-xs text-muted-foreground">
+              {progress ||
+                (dirty
+                  ? "Unsaved changes"
+                  : saved
+                    ? "Draft saved"
+                    : "Not saved yet")}
             </div>
-          </div>
-        </section>
-
-        <div className="mt-16 border-t border-border pt-8 md:mt-20 md:flex md:items-center md:justify-between">
-          <div>
-            <p className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
-              Step {currentStep} of 3
-            </p>
-            <div aria-live="polite" className="mt-2 min-h-5 text-xs text-muted-foreground">
-              {notice || "Prototype form — nothing is uploaded or saved yet."}
-            </div>
-          </div>
-
-          <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row md:mt-0">
-            {currentStep > 1 && (
-              <button
+            <div className="flex flex-wrap gap-3">
+              {step > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setStep(step - 1)}
+                >
+                  Back
+                </Button>
+              )}
+              <Button
                 type="button"
-                onClick={goBack}
-                className="group inline-flex items-center justify-center gap-3 px-5 py-4 text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors duration-500 hover:text-foreground"
+                variant="outline"
+                onClick={() =>
+                  run(async () => {
+                    await save();
+                    toast.success("Draft saved.");
+                  })
+                }
               >
-                <ArrowLeft
-                  aria-hidden="true"
-                  className="h-4 w-4 transition-transform duration-500 group-hover:-translate-x-1"
-                  strokeWidth={1.5}
-                />
-                Back
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={saveDraft}
-              className="px-7 py-4 text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors duration-500 hover:text-foreground"
-            >
-              Save draft
-            </button>
-            <button
-              type="submit"
-              className="group inline-flex items-center justify-between gap-12 border border-foreground px-7 py-4 text-[10px] uppercase tracking-[0.2em] transition-all duration-500 hover:bg-foreground hover:text-background"
-            >
-              {continueLabel}
-              <ArrowRight
-                aria-hidden="true"
-                className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-1"
-                strokeWidth={1.5}
-              />
-            </button>
-          </div>
-        </div>
+                Save draft
+              </Button>
+              <Button type="submit">
+                {busy
+                  ? "Working…"
+                  : step === 3
+                    ? saved?.awaiting_changes
+                      ? "Return for review"
+                      : "Submit release"
+                    : `Continue to ${steps[step + 1].toLowerCase()}`}
+              </Button>
+            </div>
+          </footer>
+        </fieldset>
       </form>
-    </main>
+      <Link
+        to="/portal/dashboard"
+        className="mt-7 inline-block text-xs underline"
+      >
+        Return to portal
+      </Link>
+    </PortalShell>
   );
-};
-
-export default PortalNewRelease;
+}

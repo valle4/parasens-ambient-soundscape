@@ -21,7 +21,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import SearchableSelect from "@/components/music/SearchableSelect";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +39,7 @@ import PortalSignOut from "@/components/portal/PortalSignOut";
 import PlaylistImports from "@/components/music/PlaylistImports";
 import InlineTrackPlayer from "@/components/music/InlineTrackPlayer";
 import CategoryManager from "@/components/music/CategoryManager";
-import MusicAdministrators from "@/components/music/MusicAdministrators";
+import { AdminNavigation } from "@/components/portal/PortalShell";
 import { usePortalAuth } from "@/contexts/portal-auth";
 import { useMusicAdmin } from "@/hooks/useMusicAdmin";
 import {
@@ -75,7 +81,9 @@ export default function PortalMusicLibrary() {
   const [sort, setSort] = useState<MusicSort>("manual");
   const [sortDirection, setSortDirection] = useState<MusicSortDirection>("asc");
   const sortColumn = (column: MusicSort) => {
-    setSortDirection(sort === column && sortDirection === "asc" ? "desc" : "asc");
+    setSortDirection(
+      sort === column && sortDirection === "asc" ? "desc" : "asc",
+    );
     setSort(column);
   };
   const [search, setSearch] = useState("");
@@ -97,7 +105,17 @@ export default function PortalMusicLibrary() {
   useEffect(() => {
     tableRef.current?.scrollTo({ top: 0 });
     setPlaying(null);
-  }, [page, status, scope, search, untagged, playlist, tab, sort, sortDirection]);
+  }, [
+    page,
+    status,
+    scope,
+    search,
+    untagged,
+    playlist,
+    tab,
+    sort,
+    sortDirection,
+  ]);
   const membership = useQuery({
     queryKey: ["music-playlist-members", playlist, user.id],
     enabled: Boolean(playlist),
@@ -151,14 +169,26 @@ export default function PortalMusicLibrary() {
   const lastPage = Math.max(0, Math.ceil(filtered.length / pageSize) - 1);
   const currentPage = Math.min(page, lastPage);
   const sorted = useMemo(
-    () => sortTracks(filtered, sort, data?.categories ?? [], data?.tags ?? [], sortDirection),
+    () =>
+      sortTracks(
+        filtered,
+        sort,
+        data?.categories ?? [],
+        data?.tags ?? [],
+        sortDirection,
+      ),
     [filtered, sort, sortDirection, data?.categories, data?.tags],
   );
   const visible = sorted.slice(
     currentPage * pageSize,
     (currentPage + 1) * pageSize,
   );
-  const canOrder = status === "published" && sort === "manual" && !search && !untagged && !playlist;
+  const canOrder =
+    status === "published" &&
+    sort === "manual" &&
+    !search &&
+    !untagged &&
+    !playlist;
   const refresh = async () => {
     await Promise.all([
       cache.invalidateQueries({ queryKey: ["music-library"] }),
@@ -275,7 +305,7 @@ export default function PortalMusicLibrary() {
         </Link>
         <div className="flex items-center gap-6">
           <Link
-            to="/portal/dashboard"
+            to="/portal/admin/submissions"
             className="text-xs text-muted-foreground hover:text-foreground"
           >
             Artist portal
@@ -286,6 +316,7 @@ export default function PortalMusicLibrary() {
           <PortalSignOut />
         </div>
       </header>
+      <AdminNavigation />
       <section className="mx-auto max-w-7xl py-12 md:py-16">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
@@ -293,7 +324,7 @@ export default function PortalMusicLibrary() {
               Your sound, curated
             </p>
             <h1 className="mt-4 font-display text-4xl tracking-tight md:text-5xl">
-              Music Library
+              Website music
             </h1>
             <p className="mt-4 text-sm text-muted-foreground">
               Import, organise and choose what the world hears.
@@ -337,7 +368,6 @@ export default function PortalMusicLibrary() {
             ["library", "Songs"],
             ["import", "Playlists"],
             ["categories", "Genres"],
-            ...(role.data === "owner" ? [["admins", "Administrators"]] : []),
           ].map(([key, label]) => (
             <button
               key={key}
@@ -369,7 +399,7 @@ export default function PortalMusicLibrary() {
         {tab === "categories" && data && (
           <CategoryManager categories={data.categories} onChange={refresh} />
         )}
-        {tab === "admins" && role.data === "owner" && <MusicAdministrators />}
+
         {tab === "library" && data && (
           <>
             <div className="flex flex-wrap items-center gap-3">
@@ -391,7 +421,10 @@ export default function PortalMusicLibrary() {
                 className="sm:w-56"
                 options={[
                   { value: "all", label: "All genres" },
-                  ...data.categories.map((c) => ({ value: c.id, label: categoryLabel(c, data.categories) })),
+                  ...data.categories.map((c) => ({
+                    value: c.id,
+                    label: categoryLabel(c, data.categories),
+                  })),
                 ]}
               />
               <SearchableSelect
@@ -402,7 +435,10 @@ export default function PortalMusicLibrary() {
                 className="sm:w-56"
                 options={[
                   { value: "", label: "All playlists" },
-                  ...(playlists.data ?? []).map((p) => ({ value: p.id, label: p.name })),
+                  ...(playlists.data ?? []).map((p) => ({
+                    value: p.id,
+                    label: p.name,
+                  })),
                 ]}
               />
               <div className="flex h-10 items-center gap-3 px-1 sm:px-2">
@@ -412,7 +448,10 @@ export default function PortalMusicLibrary() {
                   onCheckedChange={(checked) => setUntagged(checked === true)}
                   className="rounded-none border-muted-foreground/50"
                 />
-                <label htmlFor="music-untagged-only" className="whitespace-nowrap text-sm text-muted-foreground">
+                <label
+                  htmlFor="music-untagged-only"
+                  className="whitespace-nowrap text-sm text-muted-foreground"
+                >
                   Untagged only
                 </label>
               </div>
@@ -536,36 +575,67 @@ export default function PortalMusicLibrary() {
                         }
                       />
                     </th>
-                    <th scope="col" className="w-24" aria-sort={sort === "manual" ? "other" : "none"}>
+                    <th
+                      scope="col"
+                      className="w-24"
+                      aria-sort={sort === "manual" ? "other" : "none"}
+                    >
                       <button
                         type="button"
                         aria-label="Order: restore manual order"
                         title="Return to saved manual order"
-                        onClick={() => { setSort("manual"); setSortDirection("asc"); }}
+                        onClick={() => {
+                          setSort("manual");
+                          setSortDirection("asc");
+                        }}
                         className={`w-full py-4 text-left uppercase tracking-widest hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground ${sort === "manual" ? "text-foreground" : ""}`}
                       >
                         Order
                       </button>
                     </th>
-                    {([
-                      ["song", "Song"],
-                      ["artist", "Artist"],
-                      ["genre", "Genre"],
-                    ] as const).map(([column, label]) => {
+                    {(
+                      [
+                        ["song", "Song"],
+                        ["artist", "Artist"],
+                        ["genre", "Genre"],
+                      ] as const
+                    ).map(([column, label]) => {
                       const active = sort === column;
-                      const SortIcon = active ? (sortDirection === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
-                      const nextDirection = active && sortDirection === "asc" ? "Z–A" : "A–Z";
+                      const SortIcon = active
+                        ? sortDirection === "asc"
+                          ? ArrowUp
+                          : ArrowDown
+                        : ArrowUpDown;
+                      const nextDirection =
+                        active && sortDirection === "asc" ? "Z–A" : "A–Z";
                       return (
-                        <th key={column} scope="col" aria-sort={active ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}>
+                        <th
+                          key={column}
+                          scope="col"
+                          aria-sort={
+                            active
+                              ? sortDirection === "asc"
+                                ? "ascending"
+                                : "descending"
+                              : "none"
+                          }
+                        >
                           <button
                             type="button"
                             aria-label={`${label}: sort ${nextDirection}`}
-                            title={column === "genre" ? `Sort ${nextDirection} by first genre alphabetically; untagged songs last` : `Sort ${nextDirection}`}
+                            title={
+                              column === "genre"
+                                ? `Sort ${nextDirection} by first genre alphabetically; untagged songs last`
+                                : `Sort ${nextDirection}`
+                            }
                             onClick={() => sortColumn(column)}
                             className={`flex w-full items-center gap-2 py-4 pr-4 text-left uppercase tracking-widest hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground ${active ? "text-foreground" : ""}`}
                           >
                             {label}
-                            <SortIcon aria-hidden="true" className={`h-3 w-3 ${active ? "" : "opacity-40"}`} />
+                            <SortIcon
+                              aria-hidden="true"
+                              className={`h-3 w-3 ${active ? "" : "opacity-40"}`}
+                            />
                           </button>
                         </th>
                       );
@@ -585,8 +655,11 @@ export default function PortalMusicLibrary() {
                             busy ||
                             dragging ||
                             (event.target instanceof Element &&
-                              event.target.closest("button, input, a, label, select, textarea, [role='checkbox']"))
-                          ) return;
+                              event.target.closest(
+                                "button, input, a, label, select, textarea, [role='checkbox']",
+                              ))
+                          )
+                            return;
                           toggle(track.id);
                         }}
                         data-drop-edge={
@@ -806,7 +879,10 @@ export default function PortalMusicLibrary() {
             </DialogDescription>
           </DialogHeader>
           <Select value={tagMode} onValueChange={setTagMode} disabled={busy}>
-            <SelectTrigger aria-label="How to apply tags" className="rounded-none">
+            <SelectTrigger
+              aria-label="How to apply tags"
+              className="rounded-none"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="rounded-none">
@@ -823,28 +899,41 @@ export default function PortalMusicLibrary() {
             className="rounded-none"
           />
           <div className="max-h-60 space-y-3 overflow-auto border border-border p-4">
-            {data?.categories.filter((c) => categoryLabel(c, data.categories).toLowerCase().includes(tagSearch.trim().toLowerCase())).map((c) => (
-              <label key={c.id} className="flex items-center gap-3 text-sm">
-                <Checkbox
-                  className="rounded-none border-muted-foreground/50"
-                  disabled={busy}
-                  checked={tagIds.has(c.id)}
-                  onCheckedChange={(checked) =>
-                    setTagIds((old) => {
-                      const next = new Set(old);
-                      if (checked === true) next.add(c.id);
-                      else next.delete(c.id);
-                      return next;
-                    })
-                  }
-                />
-                {categoryLabel(c, data.categories)}
-              </label>
-            ))}
+            {data?.categories
+              .filter((c) =>
+                categoryLabel(c, data.categories)
+                  .toLowerCase()
+                  .includes(tagSearch.trim().toLowerCase()),
+              )
+              .map((c) => (
+                <label key={c.id} className="flex items-center gap-3 text-sm">
+                  <Checkbox
+                    className="rounded-none border-muted-foreground/50"
+                    disabled={busy}
+                    checked={tagIds.has(c.id)}
+                    onCheckedChange={(checked) =>
+                      setTagIds((old) => {
+                        const next = new Set(old);
+                        if (checked === true) next.add(c.id);
+                        else next.delete(c.id);
+                        return next;
+                      })
+                    }
+                  />
+                  {categoryLabel(c, data.categories)}
+                </label>
+              ))}
           </div>
-          {data && !data.categories.some((c) => categoryLabel(c, data.categories).toLowerCase().includes(tagSearch.trim().toLowerCase())) && (
-            <p className="text-sm text-muted-foreground">No matching genres. You can create one below.</p>
-          )}
+          {data &&
+            !data.categories.some((c) =>
+              categoryLabel(c, data.categories)
+                .toLowerCase()
+                .includes(tagSearch.trim().toLowerCase()),
+            ) && (
+              <p className="text-sm text-muted-foreground">
+                No matching genres. You can create one below.
+              </p>
+            )}
           <details className="border border-border p-3">
             <summary className="cursor-pointer text-sm">
               + Create genre or subgenre
@@ -866,7 +955,9 @@ export default function PortalMusicLibrary() {
                 searchPlaceholder="Search parent genres…"
                 options={[
                   { value: "", label: "New top-level genre" },
-                  ...(data?.categories ?? []).filter((c) => !c.parent_id).map((c) => ({ value: c.id, label: c.name })),
+                  ...(data?.categories ?? [])
+                    .filter((c) => !c.parent_id)
+                    .map((c) => ({ value: c.id, label: c.name })),
                 ]}
               />
               <Button

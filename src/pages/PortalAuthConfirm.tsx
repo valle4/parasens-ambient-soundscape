@@ -2,11 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { parsePortalEmailLink } from "@/lib/portal-auth-links";
+import { parsePortalConfirmationLink, parsePortalEmailLink, type PortalEmailLink } from "@/lib/portal-auth-links";
 import { usePortalAuth } from "@/contexts/portal-auth";
 
 const PortalAuthConfirm = () => {
-  const [emailLink] = useState(() => parsePortalEmailLink(window.location.hash));
+  const [confirmationLink] = useState(() => parsePortalConfirmationLink(window.location.hash));
+  // Retain the exchanged token for a network retry without redeeming an
+  // already-consumed invitation again. It never goes into browser storage.
+  const resolvedEmailLink = useRef<PortalEmailLink | null>(
+    confirmationLink && "tokenHash" in confirmationLink ? confirmationLink : null,
+  );
   const [pending, setPending] = useState(false);
   const [complete, setComplete] = useState(false);
   const [error, setError] = useState("");
@@ -20,12 +25,33 @@ const PortalAuthConfirm = () => {
   }, []);
 
   const confirm = async () => {
-    if (!supabase || !emailLink || inFlight.current || complete) return;
+    if (!supabase || !confirmationLink || inFlight.current || complete) return;
     inFlight.current = true;
     setPending(true);
     setError("");
     setCanRetry(false);
     try {
+      if (!resolvedEmailLink.current && "invitationToken" in confirmationLink) {
+        const { data, error: exchangeError } = await supabase.functions.invoke("portal-invitations", {
+          body: { action: "redeem", token: confirmationLink.invitationToken },
+        });
+        if (exchangeError) {
+          const status = exchangeError.context instanceof Response ? exchangeError.context.status : 0;
+          const retryable = !status || status >= 500;
+          setCanRetry(retryable);
+          setError(retryable
+            ? "We couldn’t accept your invitation just now. Please try again."
+            : "This invitation has expired, was replaced, or has already been used. Please ask PARASENS for a new invitation. If you’ve already joined, request a sign-in link below.");
+          return;
+        }
+        // Do not trust unexpected response shapes or authentication link types.
+        resolvedEmailLink.current = data?.type === "email" && typeof data.token_hash === "string"
+          ? parsePortalEmailLink(`#token_hash=${encodeURIComponent(data.token_hash)}&type=email`)
+          : null;
+        if (!resolvedEmailLink.current) throw new Error("Invalid invitation response");
+      }
+      const emailLink = resolvedEmailLink.current;
+      if (!emailLink) throw new Error("Missing sign-in token");
       const { data, error: verifyError } = await supabase.auth.verifyOtp({ token_hash: emailLink.tokenHash, type: emailLink.type });
       if (verifyError || !data.session) {
         const retryable = Boolean(verifyError && (verifyError.status === 0 || (verifyError.status ?? 0) >= 500));
@@ -47,7 +73,7 @@ const PortalAuthConfirm = () => {
 
   if (complete && user && !loading) return <Navigate to="/portal/dashboard" replace />;
   const problem = !supabase ? "Sign-in is being set up. Please try again soon."
-    : !emailLink ? "This sign-in link is incomplete. Please reopen the link in your email or request a new one."
+    : !confirmationLink ? "This sign-in link is incomplete. Please reopen the link in your email or request a new one."
     : error || (complete && sessionError);
 
   return (

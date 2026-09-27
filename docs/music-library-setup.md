@@ -14,13 +14,18 @@ administrators can use it. Artist accounts keep their existing portal access.
 - Local files, unavailable/null items and episodes are skipped and counted.
 - Imports never delete songs removed from Spotify playlists. Playlist filters
   show the cumulative history of songs imported from that playlist.
+- Listen with the expandable player beneath each song. The player stays mounted
+  while the genre dialog is opened or saved, so tagging need not interrupt listening.
+  Closing the player, changing the page/filter/tab, or opening another song ends
+  that preview. The custom cursor renders above dialogs; embedded players use
+  the native cursor.
 - Tag multiple songs at once: add tags, replace all tags, or remove selected
   tags. A song can have several genres. A subgenre also places it in its parent
   genre. Published songs must have at least one tag.
 - Archive rejected songs so repeat imports continue to skip them. Restore sends
   a song to drafts; publishing is an explicit separate action.
 - Published songs have independent manual orders in All, each genre and each
-  subgenre. Drag within a page, move to top, or enter an absolute position to
+  subgenre. Drag the grip within a page with a mouse or touch, or enter an absolute position to
   move across pages. Clear search/source-playlist filters before ordering.
   Newly published (or republished) songs append to each view.
 - Database reads page beyond the 1,000-row server limit; the administrator table
@@ -28,13 +33,17 @@ administrators can use it. Artist accounts keep their existing portal access.
 
 ## Development setup
 
+On 2026-09-27, Music Library became **Website music** in the permanent admin navigation. Administrator account management moved to **Accounts**. The admin workspace and custom invitations now use the development backend; see [admin workspace setup](admin-workspace-setup.md). The deployment notes below describe the original music release.
+
+Music release `f9b9a85` was published successfully to the development alias in Cloudflare deployment `42eb701d-bc1f-4412-91f6-e73a6b878598` on 2026-09-20. Preview has `VITE_MUSIC_LIBRARY_ENABLED=true` and the supplied `VITE_SPOTIFY_CLIENT_ID`. Live browser checks confirmed 147 public song rows, genre buttons, and a sign-in redirect from `/portal/music` for signed-out visitors. The isolated release passed all 24 tests, type checking and the build. The separate 72-hour invitation changes were excluded. Production remains on deployment `8354e450-f100-446f-b237-c03bfef05c7a` with no environment variables.
+
 Both music migrations were applied to `zsjcelwhipbwrwdzegdl` on 2026-09-20 through the Supabase SQL editor in one transaction. Verification returned 147 songs, 40 categories and the owner role for `hello@parasens.com`. Both migration versions are recorded in `supabase_migrations.schema_migrations`, with RLS enabled and no anon/authenticated access to that history table. All music tables have RLS enabled; anonymous callers cannot execute imports and artist accounts cannot insert administrator grants.
 
 Supabase labels its primary branch `main / PRODUCTION`, but Cloudflare's project API confirmed that only Preview has a Supabase URL, pointing at this project; Production has no environment variables and retains deployment `8354e450-f100-446f-b237-c03bfef05c7a`. This establishes the documented development-only usage. An initial automatic review rejection was resolved by that fresh scope verification before running the migration.
 
 The `invite-music-admin` Edge Function is deployed with gateway JWT verification disabled; it independently verifies the signed-in user and owner role. Live HTTP checks verified 147 published songs, 40 categories, no anonymous administrator role, a protected administrator list, and a 401 response to unsigned invitation requests. No invitation was sent during verification.
 
-The `hello@parasens.com` portal account does not yet exist. Initial invitation and verified sign-in remain required. Keep production configuration unchanged.
+After explicit user approval, the initial invitation was sent once to `hello@parasens.com` on 2026-09-20 at 19:07:49 UTC. Supabase shows matching Invited at and Confirmation sent at timestamps; email confirmation and first sign-in are pending. The user must follow the email link and then connect Spotify in Music Library. This native invitation uses the existing one-hour expiry; the separate 72-hour invitation work remains undeployed. Keep production configuration unchanged.
 
 1. Apply `supabase/migrations/202609200001_music_library.sql` followed by
    `supabase/migrations/202609200002_music_seed.sql` to development project
@@ -63,7 +72,7 @@ The `hello@parasens.com` portal account does not yet exist. Initial invitation a
 
 ## Spotify setup
 
-The owner provided Client ID `a42d9fd75778491faa2c109548e150b7`; it is saved in the ignored local environment file. The development redirect URI was saved and verified in the Spotify app settings. Live Spotify authorization still needs testing.
+The owner provided Client ID `a42d9fd75778491faa2c109548e150b7`; it is saved in the ignored local environment file and Cloudflare Preview build variables. The development redirect URI was saved and verified in the Spotify app settings. Live Spotify authorization still needs testing.
 
 1. Create an app in the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
    Select Web API and register this redirect URI exactly:

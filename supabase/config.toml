@@ -1,5 +1,14 @@
 project_id = "zsjcelwhipbwrwdzegdl"
 
+[functions.portal-invitations]
+# Redemption validates a single-use invitation; issuing requires the server key.
+# Artists are not signed in yet, so there is no user JWT to verify at the gateway.
+verify_jwt = false
+
 [functions.invite-music-admin]
 # JWT and verified owner role are checked inside the function using Auth getUser.
+verify_jwt = false
+
+[functions.portal-admin]
+# Every action verifies Auth.getUser and the database administrator role.
 verify_jwt = false

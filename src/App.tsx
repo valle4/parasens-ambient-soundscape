@@ -14,6 +14,10 @@ import MouseSpotlight from "./components/MouseSpotlight";
 
 import { lazy, Suspense } from "react";
 const Index = lazy(() => import("./pages/Index"));
+const PortalSubmissions = lazy(() => import("./pages/PortalSubmissions"));
+const PortalArtists = lazy(() => import("./pages/PortalArtists"));
+const PortalAccounts = lazy(() => import("./pages/PortalAccounts"));
+const PortalRelease = lazy(() => import("./pages/PortalRelease"));
 const PortalDashboard = lazy(() => import("./pages/PortalDashboard"));
 const PortalNewRelease = lazy(() => import("./pages/PortalNewRelease"));
 const PortalAuthConfirm = lazy(() => import("./pages/PortalAuthConfirm"));
@@ -61,7 +65,14 @@ const App = () => (
               <Route element={<RequirePortalAuth />}>
                 <Route path="dashboard" element={<PortalDashboard />} />
                 <Route path="releases/new" element={<PortalNewRelease />} />
+                <Route path="releases/:id" element={<PortalRelease />} />
                 <Route element={<RequireMusicAdmin />}>
+                  <Route
+                    path="admin/submissions"
+                    element={<PortalSubmissions />}
+                  />
+                  <Route path="admin/artists" element={<PortalArtists />} />
+                  <Route path="admin/accounts" element={<PortalAccounts />} />
                   <Route
                     path="music"
                     element={
