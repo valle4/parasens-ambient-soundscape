@@ -107,12 +107,25 @@ be removed from this screen.
 
 ## Validation
 
-- Genre editor update (2026-09-27, prepared locally): apply
-  `202609270003_music_genre_edits.sql` before deploying the updated frontend.
+- Website music now uses the same `PortalShell` as Accounts, Artists and
+  Submissions, including its background, header, title and content spacing.
+  The separate administrator badge and marketing eyebrow were removed.
+  The local desktop preview, genre browser regression, type check, scoped lint
+  and development build passed after the layout change.
+- Genre editor update (2026-09-27): migration
+  `202609270003_music_genre_edits.sql` applied and recorded on the development
+  backend. Development deployment `757ae8ac-284f-4bc1-8dd9-28c0ab95b523`
+  successfully published commit `fb8f1e06eedf36ec69d91e3b827668c3554b0706`.
   The row genre button keeps an existing selection; the popup displays saved
   genres and supports checking/unchecking directly. Mixed genres remain
   unchanged unless edited. The new admin-only RPC saves additions and removals
   atomically and retains the rule that published songs need at least one genre.
+  Live verification confirmed the save function executes for the authenticated
+  administrator with an empty selection, without changing any tracks, and
+  anonymous execution remains denied. Safari on the development alias showed
+  Base Signal's Wellness and Binaural Beats genres checked in the new popup.
+  Bulk saves and removals passed the isolated browser/database regressions.
+  Production remains on `8354e450-f100-446f-b237-c03bfef05c7a`.
 - `npm run test:music-genres`: focused browser regression for bulk selection,
   single-song editing, existing checkmarks, removals and mixed selections.
 - `npm test`: PostgreSQL-compatible isolated tests cover migrations, ordinary

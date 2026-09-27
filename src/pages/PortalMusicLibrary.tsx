@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
@@ -28,13 +28,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import PortalSignOut from "@/components/portal/PortalSignOut";
 import PlaylistImports from "@/components/music/PlaylistImports";
 import InlineTrackPlayer from "@/components/music/InlineTrackPlayer";
 import CategoryManager from "@/components/music/CategoryManager";
-import { AdminNavigation } from "@/components/portal/PortalShell";
+import PortalShell from "@/components/portal/PortalShell";
 import { usePortalAuth } from "@/contexts/portal-auth";
-import { useMusicAdmin } from "@/hooks/useMusicAdmin";
 import {
   loadCatalogue,
   loadPlaylists,
@@ -56,7 +54,6 @@ const pageSize = 50;
 
 export default function PortalMusicLibrary() {
   const { user } = usePortalAuth();
-  const role = useMusicAdmin();
   const cache = useQueryClient();
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") ?? "library";
@@ -310,45 +307,19 @@ export default function PortalMusicLibrary() {
     }
   };
   return (
-    <main className="relative min-h-screen bg-background px-5 py-7 text-foreground md:px-12 lg:px-20">
-      <header className="flex flex-wrap items-center justify-between gap-5 border-b border-border pb-6">
-        <Link to="/" className="font-display font-semibold tracking-[0.18em]">
-          PARASENS
-        </Link>
-        <div className="flex items-center gap-6">
-          <Link
-            to="/portal/admin/submissions"
-            className="text-xs text-muted-foreground hover:text-foreground"
-          >
-            Artist portal
-          </Link>
-          <span className="border border-border px-2 py-1 text-[10px] uppercase tracking-widest">
-            Administrator
-          </span>
-          <PortalSignOut />
-        </div>
-      </header>
-      <AdminNavigation />
-      <section className="mx-auto max-w-7xl py-12 md:py-16">
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <div>
-            <p className="text-[10px] uppercase tracking-[.3em] text-muted-foreground">
-              Your sound, curated
-            </p>
-            <h1 className="mt-4 font-display text-4xl tracking-tight md:text-5xl">
-              Website music
-            </h1>
-            <p className="mt-4 text-sm text-muted-foreground">
-              Import, organise and choose what the world hears.
-            </p>
-          </div>
+    <PortalShell
+      title="Website music"
+      description="Import, organise and choose what the world hears."
+    >
+      <div>
+        <div className="mb-6 flex flex-wrap gap-3">
           <Button onClick={() => setParams({ tab: "import" })}>
             <Plus className="mr-2 h-4 w-4" />
             Import songs
           </Button>
         </div>
         {data && (
-          <div className="my-9 grid grid-cols-3 gap-3">
+          <div className="mb-6 grid grid-cols-3 gap-3">
             {(["draft", "published", "archived"] as const).map((s) => (
               <button
                 key={s}
@@ -374,7 +345,7 @@ export default function PortalMusicLibrary() {
         )}
         <nav
           aria-label="Music library"
-          className="my-8 flex gap-7 overflow-x-auto border-b border-border"
+          className="my-6 flex gap-7 overflow-x-auto border-b border-border"
         >
           {[
             ["library", "Songs"],
@@ -873,7 +844,7 @@ export default function PortalMusicLibrary() {
             </div>
           </>
         )}
-      </section>
+      </div>
       <Dialog
         open={tagging}
         onOpenChange={(v) => {
@@ -1016,6 +987,6 @@ export default function PortalMusicLibrary() {
           </form>
         </DialogContent>
       </Dialog>
-    </main>
+    </PortalShell>
   );
 }
