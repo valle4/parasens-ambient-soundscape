@@ -13,6 +13,7 @@ import {
 import { categoryLabel } from "@/lib/music/catalogue";
 import { Button } from "@/components/ui/button";
 import { SearchPicker } from "@/components/ui/search-picker";
+import { MultiSelectPicker } from "@/components/ui/multi-select-picker";
 import ArtistFields from "@/components/portal/admin/ArtistFields";
 export default function PortalArtists() {
   const cache = useQueryClient();
@@ -32,7 +33,6 @@ export default function PortalArtists() {
     queryFn: () => rows<Account>("portal_accounts"),
   });
   const [assignedAccounts, setAssignedAccounts] = useState<string[]>([]);
-  const [accountSearch, setAccountSearch] = useState("");
   const ready = Boolean(directory.data && accounts.data && members.data);
   const [editing, setEditing] = useState<Artist | null | undefined>();
   const [name, setName] = useState("");
@@ -56,7 +56,6 @@ export default function PortalArtists() {
         ?.filter((m) => m.artist_id === artist?.id)
         .map((m) => m.account_email) ?? [],
     );
-    setAccountSearch("");
   };
   return (
     <PortalShell
@@ -203,13 +202,10 @@ export default function PortalArtists() {
               />
               <fieldset className="space-y-3">
                 <legend className="mb-3 text-sm">Assigned accounts</legend>
-                <SearchPicker
-                  inline
-                  multiple
-                  label="Search accounts to assign"
+                <MultiSelectPicker
+                  label="Assign accounts"
+                  searchLabel="Search accounts to assign"
                   placeholder="Search name or email…"
-                  value={accountSearch}
-                  onValueChange={setAccountSearch}
                   options={(accounts.data ?? []).map((account) => ({
                     value: account.email,
                     label: account.display_name ? `${account.display_name} · ${account.email}` : account.email,

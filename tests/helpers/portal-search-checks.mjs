@@ -6,12 +6,12 @@ export const searchFixtures = {
     { id: "artist-b", name: "Beta Artist", label_id: null },
   ],
   portal_labels: [{ id: "label-a", name: "Parasens" }],
-  portal_artist_genres: [],
+  portal_artist_genres: [{ artist_id: "artist-b", category_id: "11f24b2a-1a99-599b-a6c7-3ee1a7eeeb55" }],
   portal_accounts: [
     { email: "alpha@example.com", display_name: "Alpha Account", user_id: "account-a", invitation_status: "sent" },
     { email: "beta@example.com", display_name: "Beta Account", user_id: "account-b", invitation_status: "sent" },
   ],
-  portal_artist_members: [],
+  portal_artist_members: [{ artist_id: "artist-b", account_email: "alpha@example.com" }],
   portal_releases: [],
 };
 
@@ -35,29 +35,61 @@ export async function checkPortalSearch({ contextFor, base, owner, artist, scree
   await combo("Artist label").fill("para");
   await combo("Artist label").press("Enter");
   assert.equal(await combo("Artist label").inputValue(), "Parasens");
+  // Saved assignments are visible while the choices and search stay collapsed.
+  assert.equal(await combo("Search artist genres").count(), 0);
+  assert.equal(await combo("Search accounts to assign").count(), 0);
+  await page.getByRole("button", { name: "Remove Piano → Peaceful Piano", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Remove Alpha Account · alpha@example.com", exact: true }).waitFor();
+  await page.screenshot({ path: screenshots + "/assignments-collapsed.png", animations: "disabled" });
+  await page.getByRole("button", { name: "Add or change genres", exact: true }).click();
+  assert.ok(await page.getByRole("option").count() > 10, "Opening must show all genres");
   await combo("Search artist genres").fill("peace");
-  await combo("Search artist genres").press("Enter");
   await selected("Piano → Peaceful Piano", "true");
   await combo("Search artist genres").press("Enter");
   await selected("Piano → Peaceful Piano", "false");
+  await combo("Search artist genres").press("Enter");
+  await selected("Piano → Peaceful Piano", "true");
+  await combo("Search artist genres").press("Escape");
+  await combo("Search artist genres").waitFor({ state: "hidden" });
+  await page.getByRole("button", { name: "Remove Piano → Peaceful Piano", exact: true }).click();
+  await page.getByRole("button", { name: "Add or change genres", exact: true }).click();
+  assert.equal(await combo("Search artist genres").inputValue(), "", "Reopening resets the search");
+  await selected("Piano → Peaceful Piano", "false");
+  await combo("Search artist genres").fill("peace");
+  await combo("Search artist genres").press("Enter");
+  await combo("Search artist genres").press("Escape");
+  await page.getByRole("button", { name: "Assign accounts", exact: true }).click();
   await combo("Search accounts to assign").fill("Account");
   await combo("Search accounts to assign").press("ArrowDown");
   await combo("Search accounts to assign").press("Enter");
   await selected("Beta Account · beta@example.com", "true");
   await combo("Search accounts to assign").press("ArrowUp");
   await combo("Search accounts to assign").press("Enter");
-  await selected("Alpha Account · alpha@example.com", "true");
-  // Escape dismisses suggestions; Tab moves on without changing a selection.
+  await selected("Alpha Account · alpha@example.com", "false");
+  // Escape dismisses the dropdown; the current selections remain visible.
   await combo("Search accounts to assign").press("Escape");
-  assert.equal(await combo("Search accounts to assign").getAttribute("aria-expanded"), "false");
-  await combo("Search accounts to assign").press("ArrowDown");
+  await combo("Search accounts to assign").waitFor({ state: "hidden" });
+  await page.getByRole("button", { name: "Remove Beta Account · beta@example.com", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Assign accounts", exact: true }).press("ArrowDown");
+  await selected("Beta Account · beta@example.com", "true");
   await combo("Search accounts to assign").press("Tab");
-  assert.equal(await combo("Search accounts to assign").getAttribute("aria-expanded"), "false");
-  await page.screenshot({ path: screenshots + "/artist-search.png" });
+  assert.equal(await page.getByRole("button", { name: "Done", exact: true }).evaluate((element) => element === document.activeElement), true);
+  await page.getByRole("button", { name: "Done", exact: true }).press("Enter");
+  await combo("Search accounts to assign").waitFor({ state: "hidden" });
+  await page.screenshot({ path: screenshots + "/artist-search.png", animations: "disabled" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Add or change genres", exact: true }).click();
+  await page.screenshot({ path: screenshots + "/assignment-dropdown-mobile.png", animations: "disabled" });
+  const assignmentBox = await page.getByRole("listbox").boundingBox();
+  assert.ok(assignmentBox && assignmentBox.x >= 0 && assignmentBox.x + assignmentBox.width <= 390 && assignmentBox.y >= 0 && assignmentBox.y + assignmentBox.height <= 844, "Assignment dropdown must fit the mobile screen");
+  await combo("Search artist genres").press("Escape");
+  await page.setViewportSize({ width: 1440, height: 1100 });
 
   await page.goto(base + "/portal/admin/accounts");
   await combo("Search accounts").fill("Beta");
   await combo("Search accounts").press("Enter");
+  assert.equal(await combo("Search artist assignments").count(), 0);
+  await page.getByRole("button", { name: "Assign artists", exact: true }).click();
   await combo("Search artist assignments").fill("Artist");
   await combo("Search artist assignments").press("ArrowDown");
   await combo("Search artist assignments").press("Enter");
@@ -69,6 +101,9 @@ export async function checkPortalSearch({ contextFor, base, owner, artist, scree
   await combo("Search artist assignments").fill("Alpha");
   await combo("Search artist assignments").press("Enter");
   await selected("Alpha Artist", "true");
+  await page.getByRole("heading", { name: "Accounts", exact: true }).click();
+  await combo("Search artist assignments").waitFor({ state: "hidden" });
+  await page.getByRole("button", { name: "Remove Alpha Artist", exact: true }).waitFor();
 
   await page.goto(base + "/portal/music");
   await page.getByText("1500 songs ·", { exact: false }).waitFor();

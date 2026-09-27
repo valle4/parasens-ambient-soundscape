@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { SearchPicker } from "@/components/ui/search-picker";
+import { MultiSelectPicker } from "@/components/ui/multi-select-picker";
 import { categoryLabel } from "@/lib/music/catalogue";
 import { artistDirectory } from "@/lib/portal/api";
 
@@ -46,10 +47,9 @@ export default function ArtistFields({
       </label>
       <fieldset className="space-y-3">
         <legend className="mb-3 text-sm">Genre tags</legend>
-        <SearchPicker
-          inline
-          multiple
-          label="Search artist genres"
+        <MultiSelectPicker
+          label="Add or change genres"
+          searchLabel="Search artist genres"
           placeholder="Search genres…"
           options={directory.genres.map((c) => ({
             value: c.id,

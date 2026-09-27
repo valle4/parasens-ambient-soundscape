@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchPicker } from "@/components/ui/search-picker";
+import { MultiSelectPicker } from "@/components/ui/multi-select-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import ArtistFields from "@/components/portal/admin/ArtistFields";
 export default function PortalAccounts() {
@@ -48,7 +49,6 @@ export default function PortalAccounts() {
   const [artists, setArtists] = useState<string[]>([]);
   const [isAdmin, setAdmin] = useState(false);
   const [search, setSearch] = useState("");
-  const [artistSearch, setArtistSearch] = useState("");
   const [addingArtist, setAddingArtist] = useState(false);
   const [newArtistName, setNewArtistName] = useState("");
   const [newArtistLabel, setNewArtistLabel] = useState("");
@@ -70,7 +70,6 @@ export default function PortalAccounts() {
         .map((m) => m.artist_id) ?? [],
     );
     setAdmin(Boolean(admins.data?.some((a) => a.email === account?.email)));
-    setArtistSearch("");
     setAddingArtist(false);
   };
   const invite = async (address: string) => {
@@ -264,13 +263,10 @@ export default function PortalAccounts() {
               </label>
               <fieldset className="space-y-3">
                 <legend className="mb-3 text-sm">Assigned artist names</legend>
-                <SearchPicker
-                  inline
-                  multiple
-                  label="Search artist assignments"
+                <MultiSelectPicker
+                  label="Assign artists"
+                  searchLabel="Search artist assignments"
                   placeholder="Search artists…"
-                  value={artistSearch}
-                  onValueChange={setArtistSearch}
                   options={(directory.data?.artists ?? []).map((artist) => ({
                     value: artist.id, label: artist.name, checked: artists.includes(artist.id),
                   }))}
@@ -331,7 +327,6 @@ export default function PortalAccounts() {
                           );
                           setArtists((old) => [...new Set([...old, id])]);
                           setAddingArtist(false);
-                          setArtistSearch("");
                           await Promise.all([
                             cache.invalidateQueries({
                               queryKey: ["portal-directory"],
