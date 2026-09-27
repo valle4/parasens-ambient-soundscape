@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { SearchPicker } from "@/components/ui/search-picker";
 import { categoryLabel } from "@/lib/music/catalogue";
 import { artistDirectory } from "@/lib/portal/api";
 
@@ -22,7 +21,6 @@ export default function ArtistFields({
   genres: string[];
   setGenres: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
-  const [genreSearch, setGenreSearch] = useState("");
   return (
     <>
       <label className="block space-y-2 text-sm">
@@ -36,50 +34,32 @@ export default function ArtistFields({
       </label>
       <label className="block space-y-2 text-sm">
         <span>Label</span>
-        <Input
-          list="portal-labels"
-          maxLength={120}
+        <SearchPicker
+          label="Artist label"
           value={label}
-          onChange={(e) => setLabel(e.target.value)}
+          onValueChange={(value) => setLabel(value.slice(0, 120))}
           placeholder="Choose or enter a label"
+          options={directory.labels.map((label) => ({ value: label.id, label: label.name }))}
+          onSelect={(option) => setLabel(option.label)}
+          emptyMessage="No matching labels. You can use the name you typed."
         />
-        <datalist id="portal-labels">
-          {directory?.labels.map((l) => (
-            <option key={l.id} value={l.name} />
-          ))}
-        </datalist>
       </label>
       <fieldset className="space-y-3">
         <legend className="mb-3 text-sm">Genre tags</legend>
-        <Input
-          aria-label="Search artist genres"
+        <SearchPicker
+          inline
+          multiple
+          label="Search artist genres"
           placeholder="Search genres…"
-          value={genreSearch}
-          onChange={(e) => setGenreSearch(e.target.value)}
+          options={directory.genres.map((c) => ({
+            value: c.id,
+            label: categoryLabel(c, directory.genres),
+            checked: genres.includes(c.id),
+          }))}
+          onSelect={(option) => setGenres((old) =>
+            old.includes(option.value) ? old.filter((id) => id !== option.value) : [...old, option.value],
+          )}
         />
-        <div className="max-h-56 space-y-3 overflow-auto">
-          {directory?.genres
-            .filter((c) =>
-              categoryLabel(c, directory.genres)
-                .toLowerCase()
-                .includes(genreSearch.toLowerCase()),
-            )
-            .map((c) => (
-              <label key={c.id} className="flex items-center gap-3 text-sm">
-                <Checkbox
-                  checked={genres.includes(c.id)}
-                  onCheckedChange={(checked) =>
-                    setGenres((old) =>
-                      checked
-                        ? [...old, c.id]
-                        : old.filter((id) => id !== c.id),
-                    )
-                  }
-                />
-                {categoryLabel(c, directory.genres)}
-              </label>
-            ))}
-        </div>
       </fieldset>
     </>
   );

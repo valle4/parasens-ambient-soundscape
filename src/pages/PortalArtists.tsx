@@ -12,8 +12,7 @@ import {
 } from "@/lib/portal/api";
 import { categoryLabel } from "@/lib/music/catalogue";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { SearchPicker } from "@/components/ui/search-picker";
 import ArtistFields from "@/components/portal/admin/ArtistFields";
 export default function PortalArtists() {
   const cache = useQueryClient();
@@ -65,12 +64,18 @@ export default function PortalArtists() {
       description="Manage artist names, their labels and genres, and the accounts sharing each act."
     >
       <div className="mb-6 flex flex-wrap gap-3">
-        <Input
-          aria-label="Search artists"
+        <SearchPicker
+          label="Search artists"
           placeholder="Search artist names…"
           className="max-w-md"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onValueChange={setSearch}
+          options={(directory.data?.artists ?? []).map((artist) => ({ value: artist.id, label: artist.name }))}
+          onSelect={(option) => {
+            const artist = directory.data?.artists.find((artist) => artist.id === option.value);
+            if (artist) edit(artist);
+          }}
+          disabled={!ready}
         />
         <Button disabled={busy || !ready} onClick={() => edit(null)}>
           Add artist
@@ -198,47 +203,23 @@ export default function PortalArtists() {
               />
               <fieldset className="space-y-3">
                 <legend className="mb-3 text-sm">Assigned accounts</legend>
-                <Input
-                  aria-label="Search accounts to assign"
+                <SearchPicker
+                  inline
+                  multiple
+                  label="Search accounts to assign"
                   placeholder="Search name or email…"
                   value={accountSearch}
-                  onChange={(e) => setAccountSearch(e.target.value)}
-                />
-                <div className="max-h-56 space-y-3 overflow-auto">
-                  {accounts.data
-                    ?.filter((a) =>
-                      `${a.display_name} ${a.email}`
-                        .toLowerCase()
-                        .includes(accountSearch.toLowerCase()),
-                    )
-                    .map((a) => (
-                      <label
-                        key={a.email}
-                        className="flex items-start gap-3 text-sm"
-                      >
-                        <Checkbox
-                          checked={assignedAccounts.includes(a.email)}
-                          onCheckedChange={(checked) =>
-                            setAssignedAccounts((old) =>
-                              checked
-                                ? [...old, a.email]
-                                : old.filter((email) => email !== a.email),
-                            )
-                          }
-                        />
-                        <span className="break-all">
-                          {a.display_name
-                            ? `${a.display_name} · ${a.email}`
-                            : a.email}
-                        </span>
-                      </label>
-                    ))}
-                  {accounts.data?.length === 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Create an account in Accounts first, then assign it here.
-                    </p>
+                  onValueChange={setAccountSearch}
+                  options={(accounts.data ?? []).map((account) => ({
+                    value: account.email,
+                    label: account.display_name ? `${account.display_name} · ${account.email}` : account.email,
+                    checked: assignedAccounts.includes(account.email),
+                  }))}
+                  onSelect={(option) => setAssignedAccounts((old) =>
+                    old.includes(option.value) ? old.filter((email) => email !== option.value) : [...old, option.value],
                   )}
-                </div>
+                  emptyMessage={accounts.data?.length === 0 ? "Create an account in Accounts first, then assign it here." : "No matches found."}
+                />
                 <p className="text-xs text-muted-foreground">
                   Selected accounts can access this artist’s releases. Several
                   accounts can share an artist.

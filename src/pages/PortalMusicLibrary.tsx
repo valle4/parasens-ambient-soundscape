@@ -12,13 +12,13 @@ import {
   Music2,
   Play,
   Plus,
-  Search,
   Tag,
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SearchPicker } from "@/components/ui/search-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import SearchableSelect from "@/components/music/SearchableSelect";
 import {
@@ -386,14 +386,16 @@ export default function PortalMusicLibrary() {
         {tab === "library" && data && (
           <>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="relative min-w-0 basis-full lg:min-w-56 lg:flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  aria-label="Search songs or artists"
+              <div className="min-w-0 basis-full lg:min-w-56 lg:flex-1">
+                <SearchPicker
+                  label="Search songs or artists"
                   placeholder="Search songs or artists…"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="rounded-none pl-10"
+                  onValueChange={setSearch}
+                  options={ordered
+                    .filter((track) => (!untagged || !tagsByTrack.has(track.id)) && (!playlist || membership.data?.has(track.id)))
+                    .map((track) => ({ value: track.id, label: `${track.title} · ${track.artist}` }))}
+                  onSelect={(option) => setSearch(ordered.find((track) => track.id === option.value)?.title ?? "")}
                 />
               </div>
               <SearchableSelect
@@ -862,51 +864,26 @@ export default function PortalMusicLibrary() {
                 " A dash means only some selected songs have that genre. Unchanged genres stay as they are."}
             </DialogDescription>
           </DialogHeader>
-          <Input
-            aria-label="Search available genres"
+          <SearchPicker
+            inline
+            multiple
+            disabled={busy}
+            label="Search available genres"
             placeholder="Search genres and subgenres…"
             value={tagSearch}
-            onChange={(event) => setTagSearch(event.target.value)}
-            className="rounded-none"
+            onValueChange={setTagSearch}
+            emptyMessage="No matching genres. You can create one below."
+            options={(data?.categories ?? []).map((c) => ({
+              value: c.id,
+              label: categoryLabel(c, data.categories),
+              checked: tagEdits.get(c.id) ?? (
+                !tagCounts.has(c.id) ? false
+                  : tagCounts.get(c.id) === selected.size ? true
+                    : "indeterminate"
+              ),
+            }))}
+            onSelect={(option) => changeTag(option.value, option.checked !== true)}
           />
-          <div className="max-h-60 space-y-3 overflow-auto border border-border p-4">
-            {data?.categories
-              .filter((c) =>
-                categoryLabel(c, data.categories)
-                  .toLowerCase()
-                  .includes(tagSearch.trim().toLowerCase()),
-              )
-              .map((c) => (
-                <label key={c.id} className="flex items-center gap-3 text-sm">
-                  <Checkbox
-                    className="rounded-none border-muted-foreground/50"
-                    disabled={busy}
-                    checked={
-                      tagEdits.get(c.id) ??
-                      (!tagCounts.has(c.id)
-                        ? false
-                        : tagCounts.get(c.id) === selected.size
-                          ? true
-                          : "indeterminate")
-                    }
-                    onCheckedChange={(checked) =>
-                      changeTag(c.id, checked === true)
-                    }
-                  />
-                  {categoryLabel(c, data.categories)}
-                </label>
-              ))}
-          </div>
-          {data &&
-            !data.categories.some((c) =>
-              categoryLabel(c, data.categories)
-                .toLowerCase()
-                .includes(tagSearch.trim().toLowerCase()),
-            ) && (
-              <p className="text-sm text-muted-foreground">
-                No matching genres. You can create one below.
-              </p>
-            )}
           <details className="border border-border p-3">
             <summary className="cursor-pointer text-sm">
               + Create genre or subgenre

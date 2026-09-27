@@ -11,6 +11,7 @@ import {
 } from "@/lib/portal/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SearchPicker } from "@/components/ui/search-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import ArtistFields from "@/components/portal/admin/ArtistFields";
 export default function PortalAccounts() {
@@ -91,12 +92,21 @@ export default function PortalAccounts() {
       description="Invite people and manage which artist names they can access. Several people can share an act."
     >
       <div className="mb-6 flex flex-wrap gap-3">
-        <Input
-          aria-label="Search accounts"
+        <SearchPicker
+          label="Search accounts"
           placeholder="Search name or email…"
           className="max-w-md"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onValueChange={setSearch}
+          options={(accounts.data ?? []).map((account) => ({
+            value: account.email,
+            label: account.display_name ? `${account.display_name} · ${account.email}` : account.email,
+          }))}
+          onSelect={(option) => {
+            const account = accounts.data?.find((account) => account.email === option.value);
+            if (account) edit(account);
+          }}
+          disabled={!members.data || !admins.data || !directory.data}
         />
         <Button
           disabled={busy || !members.data || !admins.data || !directory.data}
@@ -254,36 +264,20 @@ export default function PortalAccounts() {
               </label>
               <fieldset className="space-y-3">
                 <legend className="mb-3 text-sm">Assigned artist names</legend>
-                <Input
-                  aria-label="Search artist assignments"
+                <SearchPicker
+                  inline
+                  multiple
+                  label="Search artist assignments"
                   placeholder="Search artists…"
                   value={artistSearch}
-                  onChange={(e) => setArtistSearch(e.target.value)}
+                  onValueChange={setArtistSearch}
+                  options={(directory.data?.artists ?? []).map((artist) => ({
+                    value: artist.id, label: artist.name, checked: artists.includes(artist.id),
+                  }))}
+                  onSelect={(option) => setArtists((old) =>
+                    old.includes(option.value) ? old.filter((id) => id !== option.value) : [...old, option.value],
+                  )}
                 />
-                <div className="max-h-56 space-y-3 overflow-auto">
-                  {directory.data?.artists
-                    .filter((a) =>
-                      a.name.toLowerCase().includes(artistSearch.toLowerCase()),
-                    )
-                    .map((a) => (
-                      <label
-                        key={a.id}
-                        className="flex items-center gap-3 text-sm"
-                      >
-                        <Checkbox
-                          checked={artists.includes(a.id)}
-                          onCheckedChange={(v) =>
-                            setArtists((old) =>
-                              v
-                                ? [...old, a.id]
-                                : old.filter((id) => id !== a.id),
-                            )
-                          }
-                        />
-                        {a.name}
-                      </label>
-                    ))}
-                </div>
               </fieldset>
               <Button
                 type="button"

@@ -12,7 +12,8 @@
     "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "test:music-ui": "node tests/music-ui.mjs",
-    "test:music-genres": "node tests/music-ui.mjs --genres-only"
+    "test:music-genres": "node tests/music-ui.mjs --genres-only",
+    "test:portal-search": "node tests/music-ui.mjs --search-only"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
