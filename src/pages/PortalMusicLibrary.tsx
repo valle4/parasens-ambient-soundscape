@@ -327,7 +327,7 @@ export default function PortalMusicLibrary() {
                   setStatus(s);
                   setParams({ tab: "library" });
                 }}
-                className={`border p-4 text-left md:p-5 ${status === s && tab === "library" ? "border-foreground/60 bg-foreground/[.03]" : "border-border"}`}
+                className={`border bg-transparent p-4 text-left md:p-5 ${status === s && tab === "library" ? "border-foreground/60" : "border-border"}`}
               >
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
                   {s === "draft"
