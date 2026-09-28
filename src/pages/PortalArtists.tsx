@@ -12,6 +12,10 @@ import {
 } from "@/lib/portal/api";
 import { categoryLabel } from "@/lib/music/catalogue";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import { SearchPicker } from "@/components/ui/search-picker";
 import { MultiSelectPicker } from "@/components/ui/multi-select-picker";
 import ArtistFields from "@/components/portal/admin/ArtistFields";
@@ -40,6 +44,8 @@ export default function PortalArtists() {
   const [genres, setGenres] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
+  const [deleting, setDeleting] = useState<Artist | null>(null);
+  const [deleteError, setDeleteError] = useState("");
   const edit = (artist: Artist | null) => {
     setEditing(artist);
     setName(artist?.name ?? "");
@@ -222,7 +228,7 @@ export default function PortalArtists() {
                 </p>
               </fieldset>
             </fieldset>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <Button disabled={busy || !ready || !name.trim()}>
                 {busy ? "Saving…" : "Save artist"}
               </Button>
@@ -234,10 +240,64 @@ export default function PortalArtists() {
               >
                 Cancel
               </Button>
+              {editing && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="sm:ml-auto"
+                  disabled={busy || !ready}
+                  onClick={() => {
+                    setDeleteError("");
+                    setDeleting(editing);
+                  }}
+                >
+                  Delete artist
+                </Button>
+              )}
             </div>
           </form>
         )}
       </div>
+      <AlertDialog open={deleting !== null} onOpenChange={(open) => { if (!open && !busy) setDeleting(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deleting?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the artist and their genre and account assignments.
+              The accounts themselves remain. Artists with linked releases cannot be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteError && <p role="alert" className="text-sm">{deleteError}</p>}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <Button
+              type="button"
+              disabled={busy}
+              onClick={async () => {
+                if (!deleting || busy) return;
+                setBusy(true);
+                setDeleteError("");
+                try {
+                  await portalRpc("portal_delete_artist", { p_id: deleting.id });
+                  await Promise.all([
+                    cache.invalidateQueries({ queryKey: ["portal-directory"] }),
+                    cache.invalidateQueries({ queryKey: ["portal-members"] }),
+                  ]);
+                  setEditing(undefined);
+                  setDeleting(null);
+                  toast.success("Artist deleted.");
+                } catch (error) {
+                  setDeleteError(error instanceof Error ? error.message : "Could not delete artist. Please try again.");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? "Deleting…" : "Delete artist"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PortalShell>
   );
 }

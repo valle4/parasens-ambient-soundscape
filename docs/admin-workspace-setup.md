@@ -54,3 +54,10 @@ Migration `202609270002_artist_account_assignment.sql` applied and recorded in m
 - While inviting a new account, inline creation selects the new artist; Save & send invitation creates the account and applies its selected artists.
 - Apply `202609270002_artist_account_assignment.sql` before publishing the frontend. Its admin-only function performs the profile save and membership changes in one transaction, validates accounts and never updates account roles or unrelated artists' memberships.
 - Isolated browser checks passed for creation with an assigned account and inline creation/assignment with an existing artist preserved. Database tests cover rollback, shared assignments, duplicate names, access restrictions and preservation of roles. Type checking, scoped lint and development build passed.
+
+## Artist deletion — 28 September 2026
+
+- Applied and recorded `202609270004_delete_artist.sql` on the development database `zsjcelwhipbwrwdzegdl` before publishing the UI. No artists were deleted during installation.
+- Artists → Edit artist → Delete artist opens a named confirmation. Cancel makes no changes; errors remain visible and allow retry.
+- The admin-only RPC locks the artist, refuses deletion when any releases reference it, and removes unused artists with their genre/account links. Accounts, roles, labels, genre definitions and website music remain intact.
+- Local database and browser tests cover permissions, linked-release protection, cascading assignments, preserved data, cancellation, errors, retry and list refresh. Type checking, scoped lint and the development build passed.

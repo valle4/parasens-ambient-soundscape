@@ -15,6 +15,7 @@ test("private admin workspace, submissions and permissions", async (t) => {
     "202609200001_music_library.sql",
     "202609270001_admin_workspace.sql",
     "202609270002_artist_account_assignment.sql",
+    "202609270004_delete_artist.sql",
   ])
     await db.exec(
       await readFile(
@@ -498,5 +499,35 @@ test("private admin workspace, submissions and permissions", async (t) => {
       );
     },
   );
+  await t.test("only admins delete unused artists; releases and unrelated data are preserved", async () => {
+    const category = (await q("insert into music_categories(name) values('Deletion test genre') returning id"))[0].id;
+    const id = await as(admin, () => rpc("portal_save_artist_accounts", ["Delete me", "Kept label", [category], null, ["a@example.com"]]));
+    const accountsBefore = await q("select * from portal_accounts order by email");
+    const adminsBefore = await q("select * from music_admins order by email");
+    const releasesBefore = await q("select * from portal_releases order by id");
+    const musicBefore = await q("select * from music_tracks order by id");
+    const otherMembers = await q("select * from portal_artist_members where artist_id<>$1 order by artist_id,account_email", [id]);
+    await assert.rejects(as(a, () => rpc("portal_delete_artist", [id])), /Administrator/);
+    await assert.rejects(as(null, () => rpc("portal_delete_artist", [id])), /permission denied/);
+    await assert.rejects(as(a, () => q("delete from portal_artists where id=$1", [id])), /permission denied/);
+    assert.equal((await q("select * from portal_artists where id=$1", [id])).length, 1);
+    await as(admin, () => rpc("portal_delete_artist", [id]));
+    for (const table of ["portal_artists", "portal_artist_members", "portal_artist_genres"])
+      assert.equal((await q(`select * from ${table} where ${table === "portal_artists" ? "id" : "artist_id"}=$1`, [id])).length, 0);
+    assert.deepEqual(await q("select * from portal_accounts order by email"), accountsBefore);
+    assert.deepEqual(await q("select * from music_admins order by email"), adminsBefore);
+    assert.deepEqual(await q("select * from portal_artist_members order by artist_id,account_email"), otherMembers);
+    assert.equal((await q("select * from portal_labels where name='Kept label'")).length, 1);
+    assert.equal((await q("select * from music_categories where id=$1", [category])).length, 1);
+    await assert.rejects(as(admin, () => rpc("portal_delete_artist", [id])), /no longer exists/);
+    const linked = releasesBefore.find((release) => release.artist_id)?.artist_id;
+    assert.ok(linked);
+    await assert.rejects(as(owner, () => rpc("portal_delete_artist", [linked])), /has releases/);
+    assert.equal((await q("select * from portal_artists where id=$1", [linked])).length, 1);
+    assert.deepEqual(await q("select * from portal_releases order by id"), releasesBefore);
+    assert.deepEqual(await q("select * from music_tracks order by id"), musicBefore);
+    const ownerArtist = await as(owner, () => rpc("portal_save_artist", ["Owner can delete", "", [], null]));
+    await as(owner, () => rpc("portal_delete_artist", [ownerArtist]));
+  });
   await db.close();
 });

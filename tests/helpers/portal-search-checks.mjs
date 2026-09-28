@@ -159,6 +159,50 @@ export async function checkPortalSearch({ contextFor, base, owner, artist, scree
   assert.ok(resultsBox && resultsBox.x >= 0 && resultsBox.y >= 0 && resultsBox.x + resultsBox.width <= 390 && resultsBox.y + resultsBox.height <= 844, "Mobile search results must fit on screen");
   assert.deepEqual(writes, [], "Enter in artist selectors must not save or submit a release");
   assert.deepEqual(errors, []);
+  await checkArtistDeletion({ context, page, base, screenshots });
   console.log("Portal keyboard search passed: admin and artist pages, arrows, Enter, toggle, Escape, Tab, empty results, mobile and no accidental saves.");
   console.log("Screenshots: " + screenshots);
+}
+
+async function checkArtistDeletion({ context, page, base, screenshots }) {
+  let deleted = false;
+  const requests = [];
+  await context.route("**/rest/v1/portal_artists?*", (route) => route.fulfill({
+    json: searchFixtures.portal_artists.filter((artist) => !deleted || artist.id !== "artist-b"),
+  }));
+  await context.route("**/rest/v1/rpc/portal_delete_artist", (route) => {
+    requests.push(route.request().postDataJSON());
+    if (requests.length === 1) return route.fulfill({ status: 400, json: {
+      message: "This artist has releases and cannot be deleted. Their releases and music have been kept.",
+    } });
+    deleted = true;
+    return route.fulfill({ status: 204 });
+  });
+  await page.goto(base + "/portal/admin/artists");
+  await page.getByRole("button", { name: "Add artist", exact: true }).click();
+  assert.equal(await page.getByRole("button", { name: "Delete artist", exact: true }).count(), 0);
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page.getByRole("combobox", { name: "Search artists", exact: true }).fill("Beta");
+  await page.getByRole("combobox", { name: "Search artists", exact: true }).press("Enter");
+  // Unsaved edits must not change the identity named or deleted by confirmation.
+  await page.getByLabel("Artist name", { exact: true }).fill("Unsaved artist name");
+  await page.getByRole("button", { name: "Delete artist", exact: true }).click();
+  const dialog = page.getByRole("alertdialog");
+  await dialog.getByRole("heading", { name: "Delete Beta Artist?", exact: true }).waitFor();
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  assert.equal(requests.length, 0);
+  await page.getByRole("button", { name: "Delete artist", exact: true }).click();
+  await dialog.getByRole("button", { name: "Delete artist", exact: true }).click();
+  await dialog.getByRole("alert").filter({ hasText: "has releases" }).waitFor();
+  assert.deepEqual(requests, [{ p_id: "artist-b" }]);
+  await page.screenshot({ path: screenshots + "/delete-artist-protected.png", animations: "disabled" });
+  await dialog.getByRole("button", { name: "Delete artist", exact: true }).click();
+  await dialog.waitFor({ state: "hidden" });
+  await page.getByText("Artist deleted.", { exact: true }).waitFor();
+  assert.deepEqual(requests, [{ p_id: "artist-b" }, { p_id: "artist-b" }]);
+  assert.equal(await page.getByRole("heading", { name: "Edit artist", exact: true }).count(), 0);
+  assert.equal(await page.getByRole("heading", { name: "Beta Artist", exact: true }).count(), 0);
+  await page.getByRole("combobox", { name: "Search artists", exact: true }).fill("");
+  await page.getByRole("heading", { name: "Alpha Artist", exact: true }).waitFor();
+  console.log("Artist deletion UI passed: existing artist only, named confirmation, cancel, protected-release error, retry, and refreshed artist list.");
 }
