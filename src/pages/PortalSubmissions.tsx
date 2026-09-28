@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import PortalShell, { LoadError } from "@/components/portal/PortalShell";
 import ReleaseDetail from "@/components/portal/admin/ReleaseDetail";
+import ExportSubmissions from "@/components/portal/ExportSubmissions";
 import {
   releaseList,
   statusLabels,
@@ -45,6 +46,8 @@ export default function PortalSubmissions() {
             { value: "all", label: "All submissions" },
           ]}
         />
+        <ExportSubmissions status={status} artist={artist} label="Export this view" />
+        <ExportSubmissions label="Export all submissions" />
         {artist && (
           <Button
             variant="ghost"

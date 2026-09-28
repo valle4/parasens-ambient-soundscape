@@ -12,3 +12,7 @@ verify_jwt = false
 [functions.portal-admin]
 # Every action verifies Auth.getUser and the database administrator role.
 verify_jwt = false
+
+[functions.portal-files]
+# Every request checks Auth.getUser and current release access, or the dedicated worker secret.
+verify_jwt = false

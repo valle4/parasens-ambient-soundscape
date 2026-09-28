@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Plus, Upload } from "lucide-react";
 import PortalShell, { LoadError } from "@/components/portal/PortalShell";
 import PrivateFile from "@/components/portal/PrivateFile";
+import WorkbookStatus from "@/components/portal/WorkbookStatus";
+import { portalFiles, syncReleaseWorkbook } from "@/lib/portal/files";
 import SearchableSelect from "@/components/music/SearchableSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -288,6 +290,12 @@ export default function PortalNewRelease() {
                 again.
               </p>
             )}
+            {!f.uploaded && f.provider === "dropbox" && <button type="button" className="text-xs underline" disabled={busy} onClick={() => run(async () => {
+              await portalFiles({ action: "finish", fileId: f.id });
+              await files.refetch();
+              void syncReleaseWorkbook(id).catch(() => undefined);
+              toast.success("Upload confirmed.");
+            })}>Retry confirmation</button>}
             <button
               type="button"
               className="text-xs underline"
@@ -295,6 +303,7 @@ export default function PortalNewRelease() {
                 run(async () => {
                   await portalRpc("portal_remove_file", { p_id: f.id });
                   await files.refetch();
+                  void syncReleaseWorkbook(id).catch(() => undefined);
                 })
               }
             >
@@ -334,6 +343,7 @@ export default function PortalNewRelease() {
       description="Save a draft at any time. Review the release before submitting it to PARASENS."
     >
       {directory.isError && <LoadError retry={() => directory.refetch()} />}
+      {saved && <WorkbookStatus releaseId={id} />}
       <form
         onSubmit={(e) => {
           e.preventDefault();

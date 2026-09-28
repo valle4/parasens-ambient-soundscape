@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import SearchableSelect from "@/components/music/SearchableSelect";
 import PrivateFile from "@/components/portal/PrivateFile";
+import ExportSubmissions from "@/components/portal/ExportSubmissions";
+import WorkbookStatus from "@/components/portal/WorkbookStatus";
 import { LoadError } from "@/components/portal/PortalShell";
 import {
   artistDirectory,
@@ -131,8 +133,11 @@ export default function ReleaseDetail({
           </Link>
         )}
       </header>
+      {admin && <ExportSubmissions release={id} label="Export release to Excel" />}
+      <WorkbookStatus releaseId={id} />
       <dl className="grid gap-4 text-sm sm:grid-cols-2">
         {[
+          ["Submitted by", [r.uploader_name, r.uploader_email].filter(Boolean).join(" — ")],
           ["Label", r.content.label],
           ["Genre", r.content.genre],
           ["Playlist / brief", r.content.playlistBrief],

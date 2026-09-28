@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { musicClient } from "@/lib/music/api";
 import type { PortalFile } from "@/lib/portal/api";
+import { portalFiles } from "@/lib/portal/files";
 export default function PrivateFile({ file }: { file: PortalFile }) {
   const [open, setOpen] = useState(false);
   const url = useQuery({
@@ -10,6 +11,7 @@ export default function PrivateFile({ file }: { file: PortalFile }) {
     staleTime: 240000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
+      if (file.provider === "dropbox") return (await portalFiles<{ link: string }>({ action: "download", fileId: file.id })).link;
       const { data, error } = await musicClient()
         .storage.from("portal-releases")
         .createSignedUrl(file.path, 300);

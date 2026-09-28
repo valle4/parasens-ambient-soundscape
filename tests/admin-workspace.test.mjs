@@ -16,6 +16,7 @@ test("private admin workspace, submissions and permissions", async (t) => {
     "202609270001_admin_workspace.sql",
     "202609270002_artist_account_assignment.sql",
     "202609270004_delete_artist.sql",
+    "202609280001_dropbox_exports.sql",
   ])
     await db.exec(
       await readFile(

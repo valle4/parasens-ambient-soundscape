@@ -1,5 +1,6 @@
 import { musicClient, musicRpc } from "@/lib/music/api";
 import type { Category } from "@/lib/music/catalogue";
+import { dropboxUploadsEnabled, portalFiles, syncReleaseWorkbook } from "./files";
 export type ReleaseStatus =
   | "draft"
   | "new"
@@ -48,6 +49,8 @@ export type Release = {
   created_at: string;
   updated_at: string;
   submitted_at: string | null;
+  uploader_name?: string;
+  uploader_email?: string;
 };
 export type Artist = { id: string; name: string; label_id: string | null };
 export type Account = {
@@ -67,6 +70,9 @@ export type PortalFile = {
   size: number;
   mime: string;
   uploaded: boolean;
+  provider?: "supabase" | "dropbox";
+  uploader_email?: string;
+  uploader_name?: string;
 };
 export type Message = {
   id: string;
@@ -86,7 +92,16 @@ export type Notification = {
   error: string | null;
   recipient: string;
 };
-export const portalRpc = musicRpc;
+export async function portalRpc<T = unknown>(name: string, args?: Record<string, unknown>): Promise<T> {
+  const result = await musicRpc<T>(name, args);
+  const mutations = ["portal_save_release", "portal_submit_release", "portal_review", "portal_approve_artist", "portal_add_message"];
+  const releaseId = args?.p_release || (["portal_save_release", "portal_submit_release", "portal_review"].includes(name) ? args?.p_id : undefined);
+  if (mutations.includes(name) && typeof releaseId === "string") {
+    // Durable database jobs survive a closed browser or failed immediate attempt.
+    void syncReleaseWorkbook(releaseId).catch(() => undefined);
+  }
+  return result;
+}
 export async function rows<T>(table: string): Promise<T[]> {
   const result: T[] = [];
   for (let offset = 0; ; offset += 500) {
@@ -209,6 +224,19 @@ export async function uploadReleaseFile(
 ) {
   if (file.size > 50 * 1024 * 1024) {
     throw new Error(`${file.name}: the current upload limit is 50 MB per file.`);
+  }
+  if (dropboxUploadsEnabled) {
+    const reservation = await portalFiles<{ file: PortalFile; link: string }>({ action: "prepare", releaseId, trackId, kind, name: file.name, size: file.size, mime: file.type });
+    // An interrupted response may follow a successful upload; preserve its reservation.
+    try {
+      const response = await fetch(reservation.link, { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: file });
+      if (!response.ok) throw new Error("Dropbox did not confirm the upload.");
+      await portalFiles({ action: "finish", fileId: reservation.file.id });
+    } catch {
+      throw new Error(`${file.name}: upload confirmation is incomplete. Use Retry confirmation below; if the file did not arrive, remove the entry and upload again.`);
+    }
+    void syncReleaseWorkbook(releaseId).catch(() => undefined);
+    return reservation.file;
   }
   const reservation = await portalRpc<PortalFile>("portal_prepare_file", {
     p_release: releaseId,
