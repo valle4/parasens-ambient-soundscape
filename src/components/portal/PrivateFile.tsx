@@ -32,6 +32,7 @@ export default function PrivateFile({ file }: { file: PortalFile }) {
           </span>
         </span>
         <button
+          type="button"
           className="text-xs underline"
           onClick={() => {
             setOpen(true);
@@ -49,7 +50,7 @@ export default function PrivateFile({ file }: { file: PortalFile }) {
       {open && url.isError && (
         <p role="alert" className="text-xs">
           Could not open the file.{" "}
-          <button className="underline" onClick={() => url.refetch()}>
+          <button type="button" className="underline" onClick={() => url.refetch()}>
             Retry
           </button>
         </p>
