@@ -24,11 +24,19 @@ Deno.serve(createContactHandler({
   },
   claim: (id, emailHash, payloadHash, claim) => rpc("claim_contact_submission", { p_id: id, p_email_hash: emailHash, p_payload_hash: payloadHash, p_claim: claim }),
   send: async (submission, id) => {
-    const response = await fetch("https://api.resend.com/emails", {
+    let response: Response;
+    try { response = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json", "Idempotency-Key": `contact-form/${id}` },
       body: JSON.stringify(contactEmail(submission)), signal: AbortSignal.timeout(15000),
-    });
-    if (!response.ok) throw new Error("Email not accepted");
+    }); } catch (error) {
+      console.error("contact-form: provider connection failed", error instanceof Error ? error.name : "unknown");
+      throw new Error("Email connection failed");
+    }
+    if (!response.ok) {
+      // Operational diagnostics only: never log credentials, recipients or message content.
+      console.error("contact-form: provider rejected request", response.status);
+      throw new Error("Email not accepted");
+    }
     const result = await response.json();
     if (typeof result.id !== "string") throw new Error("Missing receipt");
     return result.id;

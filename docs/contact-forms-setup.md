@@ -23,6 +23,10 @@ All 88 automated checks passed. New tests exercise the actual SQL permissions, l
 
 The migration was installed on development project `zsjcelwhipbwrwdzegdl` through Chrome. A hosted SQL check confirmed row-level security and no anonymous execution permission on the private reservation function. Cloudflare was inspected in Chrome: Production is still branch `main` with no environment variables, and Preview alone points at this backend.
 
-Hosted deployment and the two user-approved test emails are being verified. Only hello@parasens.com is approved for these tests.
+Cloudflare development deployment `345359e0-b2d8-4bbe-ac76-4627d7ea2a12` successfully published commit `1f2b66f6bf9a907e459f3df2792ab5798b587ae4`. The function was deployed through Chrome as the handler plus adapter combined into one `index.ts`; gateway JWT verification was disabled for this new public endpoint. A hosted honeypot request returned 400 without email. The development form correctly showed pending/disabled controls and preserved the text after a provider failure.
+
+Live delivery is blocked by the existing `RESEND_API_KEY`: Resend returns HTTP 401. Safe adapter diagnostics were deployed and confirm the provider rejection without logging credentials or message content. Resend showed no corresponding sent email. The single approved message test has request ID `e908665f-ac02-4340-a483-a23713e88fad`, with two failed attempts and no receipt. Its original browser form is preserved for a retry using the same ID once the key is fixed. The music test has not yet been sent. Only hello@parasens.com is approved for these two tests.
+
+A replacement-key dialog is prepared in Chrome Resend, named **PARASENS website forms**, with **Sending access** limited to **mail.parasens.com**. The Supabase secret name is prepared as `RESEND_API_KEY`; the user must generate/copy, enter and save the credential themselves. No new key was created or exposed. Do not alter the separate Supabase SMTP password or delete the working PARASENS Supabase Auth key. After the user saves the replacement, retry the existing message and send the one approved music test, then verify both in Resend.
 
 References: [Resend sending API](https://resend.com/docs/api-reference/emails/send-email), [Resend idempotency](https://resend.com/docs/dashboard/emails/idempotency-keys).
