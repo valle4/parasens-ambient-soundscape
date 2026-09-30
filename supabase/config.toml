@@ -16,3 +16,7 @@ verify_jwt = false
 [functions.portal-files]
 # Every request checks Auth.getUser and current release access, or the dedicated worker secret.
 verify_jwt = false
+
+[functions.contact-form]
+# Public forms: validated fixed-recipient mail with private database rate limits.
+verify_jwt = false
