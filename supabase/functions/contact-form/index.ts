@@ -2,7 +2,8 @@ import { contactEmail, createContactHandler } from "./handler.ts";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const resendKey = Deno.env.get("RESEND_API_KEY");
+// Dedicated website-forms secret; portal notifications keep their existing RESEND_API_KEY.
+const resendKey = Deno.env.get("RESEND_API_KEY 2");
 const origin = Deno.env.get("CONTACT_FORM_ORIGIN") || "https://development.parasens-ambient-soundscape.pages.dev";
 
 async function rpc(name: string, body: object) {
@@ -34,7 +35,12 @@ Deno.serve(createContactHandler({
     }
     if (!response.ok) {
       // Operational diagnostics only: never log credentials, recipients or message content.
-      console.error("contact-form: provider rejected request", response.status);
+      const failure = await response.json().catch(() => null);
+      const knownCodes = ["validation_error", "invalid_idempotency_key", "missing_api_key", "restricted_api_key", "invalid_permission", "suspended_api_key", "invalid_parameter", "missing_required_field", "rate_limit_exceeded"];
+      const code = knownCodes.includes(failure?.name) ? failure.name : "unknown";
+      const message = typeof failure?.message === "string" ? failure.message.toLowerCase() : "";
+      const field = ["api key", "authorization", "idempotency", "from", "reply_to", "subject", "text", "html", "recipient", "domain"].find(value => message.includes(value)) || "unknown";
+      console.error("contact-form: provider rejected request", response.status, code, field);
       throw new Error("Email not accepted");
     }
     const result = await response.json();
