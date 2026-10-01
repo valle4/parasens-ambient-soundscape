@@ -29,6 +29,13 @@ Cloudflare development deployment `345359e0-b2d8-4bbe-ac76-4627d7ea2a12` success
 
 The initial 30 September message test was rejected with HTTP 401 using the shared `RESEND_API_KEY`; Resend showed no sent email. That request (`e908665f-ac02-4340-a483-a23713e88fad`) failed twice and is now beyond the retry window. The owner created a dedicated **PARASENS website forms** sending key and saved it in Supabase under `RESEND_API_KEY 2`. Only `contact-form` was updated to use that separate secret. The existing portal functions, shared secret, SMTP settings and email templates are unchanged.
 
-The dedicated-key function was deployed through Chrome on 1 October. Server type checking and all 10 contact-form tests passed. A fresh approved message test failed twice; the second attempt retained the same browser request ID. Safe provider diagnostics report HTTP 400, `validation_error`, field category `api key`. Resend shows the dedicated key with Sending access for mail.parasens.com but no activity and no sent test emails. The separate secret value needs correction by the owner; its editor is prepared in Chrome. Do not overwrite the original shared secret. Delivery is not yet verified, and the music test has not been sent. The browser retains the current message payload and request ID for retry. Only hello@parasens.com is approved for the two test emails.
+The dedicated-key function was deployed through Chrome on 1 October. Server type checking and all 10 contact-form tests passed. The owner corrected the dedicated secret value at 14:39 UTC after two HTTP 400 failures. The subsequent retry retained the same browser request ID and succeeded. The original shared secret still has its 20 September update timestamp and was not changed.
+
+Both approved tests were completed through the development website in Chrome. Each form showed its success message, and Resend confirmed one delivered email per form to **hello@parasens.com**:
+
+- Contact message: [receipt 01a0f7e8-1361-72ee-aad0-c578d950abf2](https://resend.com/emails/01a0f7e8-1361-72ee-aad0-c578d950abf2), delivered 1 October at 16:39 Europe/Stockholm.
+- Music submission: [receipt 01a0f7e8-8b39-738f-a89b-09d727491481](https://resend.com/emails/01a0f7e8-8b39-738f-a89b-09d727491481), delivered 1 October at 16:40 Europe/Stockholm.
+
+Both email detail pages showed the expected sender, subject, recipient, Reply-To and complete form contents. The music test explicitly identified its homepage link as a placeholder rather than a track for review. No additional test emails are authorized or needed. This verifies development only; the public production site has not been replaced in this task.
 
 References: [Resend sending API](https://resend.com/docs/api-reference/emails/send-email), [Resend idempotency](https://resend.com/docs/dashboard/emails/idempotency-keys).
