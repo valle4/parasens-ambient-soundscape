@@ -15,6 +15,7 @@ export default function PortalSubmissions() {
   const [params, setParams] = useSearchParams();
   const [status, setStatus] = useState("pending");
   const [page, setPage] = useState(0);
+  const [showList, setShowList] = useState(false);
   const selected = params.get("release");
   const artist = params.get("artist") ?? undefined;
   const list = useQuery({
@@ -46,8 +47,13 @@ export default function PortalSubmissions() {
             { value: "all", label: "All submissions" },
           ]}
         />
-        <ExportSubmissions status={status} artist={artist} label="Export this view" />
-        <ExportSubmissions label="Export all submissions" />
+        <details className="relative">
+          <summary className="cursor-pointer border border-border px-3 py-2 text-sm">Export submissions</summary>
+          <div className="absolute left-0 top-full z-20 mt-1 flex w-max max-w-[85vw] flex-col gap-2 border border-border bg-background p-3">
+            <ExportSubmissions status={status} artist={artist} label="Export this view" />
+            <ExportSubmissions label="Export all submissions" />
+          </div>
+        </details>
         {artist && (
           <Button
             variant="ghost"
@@ -60,20 +66,25 @@ export default function PortalSubmissions() {
           </Button>
         )}
       </div>
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(260px,.7fr)_minmax(0,1.3fr)]">
-        <aside className="min-w-0 lg:sticky lg:top-5">
+      {selected && <Button variant="outline" className="mb-4 lg:hidden" onClick={() => setShowList(!showList)}>
+        {showList ? "Back to selected release" : "Choose another submission"}
+      </Button>}
+      <div className="grid items-start gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <aside className={`min-w-0 lg:sticky lg:top-5 ${selected && !showList ? "hidden lg:block" : ""}`}>
           {list.isPending && <p role="status">Loading submissions…</p>}
           {list.isError && <LoadError retry={() => list.refetch()} />}
           <div className="max-h-[65vh] overflow-auto border border-border">
             {list.data?.items.map((r) => (
               <button
                 key={r.id}
-                className={`block w-full border-b border-border p-5 text-left last:border-0 hover:bg-foreground/[.03] ${selected === r.id ? "bg-foreground/[.06]" : ""}`}
-                onClick={() =>
+                className={`block w-full border-b border-border p-4 text-left last:border-0 hover:text-foreground ${selected === r.id ? "border-l-2 border-l-foreground" : "text-muted-foreground"}`}
+                aria-current={selected === r.id ? "true" : undefined}
+                onClick={() => {
                   setParams(
                     artist ? { release: r.id, artist } : { release: r.id },
-                  )
-                }
+                  );
+                  setShowList(false);
+                }}
               >
                 <span className="block font-display text-lg">{r.title}</span>
                 <span className="mt-2 block text-xs text-muted-foreground">

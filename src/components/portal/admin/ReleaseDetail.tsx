@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { ExternalLink } from "lucide-react";
+import { dropboxFolderLink } from "@/lib/portal/dropbox-links";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -93,6 +95,10 @@ export default function ReleaseDetail({
   if (release.isError) return <LoadError retry={() => release.refetch()} />;
   const r = release.data;
   const artist = directory.data?.artists.find((a) => a.id === r.artist_id);
+  const dropboxFolders = [...new Map((files.data ?? []).flatMap((file) => {
+    const href = dropboxFolderLink(file, true);
+    return href ? [[href, file.uploader_name || file.uploader_email || "Release folder"] as const] : [];
+  })).entries()];
   const editable = r.status === "draft" || r.awaiting_changes;
   const pendingNotifications =
     discussion.data?.notifications.filter((n) => n.state !== "sent") ?? [];
@@ -104,14 +110,14 @@ export default function ReleaseDetail({
     await cache.invalidateQueries({ queryKey: ["portal-discussion", id] });
   };
   return (
-    <article className="space-y-7 border border-border p-5 md:p-7">
+    <article className="min-w-0 space-y-5 border border-border p-4 md:p-6">
       <header>
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs text-muted-foreground">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm text-muted-foreground">
               {artist?.name || r.suggested_artist || "Artist to be confirmed"}
             </p>
-            <h2 className="mt-2 font-display text-2xl">{r.title}</h2>
+            <h2 className="mt-1 break-words font-display text-2xl">{r.title}</h2>
           </div>
           <span className="border border-border px-3 py-2 text-xs">
             {statusLabels[r.status]}
@@ -121,7 +127,7 @@ export default function ReleaseDetail({
           <p className="mt-3 text-sm">Awaiting artist changes</p>
         )}
         <p className="mt-3 text-xs text-muted-foreground">
-          {r.content.releaseType} · {r.content.tracks?.length ?? 0} tracks ·
+          {r.content.releaseType} · {r.content.tracks?.length ?? 0} {(r.content.tracks?.length ?? 0) === 1 ? "track" : "tracks"} ·
           Updated {new Date(r.updated_at).toLocaleDateString()}
         </p>
         {editable && (
@@ -132,29 +138,53 @@ export default function ReleaseDetail({
             {r.awaiting_changes ? "Make requested changes" : "Continue draft"}
           </Link>
         )}
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+          {r.content.label && <p><span className="text-muted-foreground">Label </span>{r.content.label}</p>}
+          {r.content.genre && <p><span className="text-muted-foreground">Genre </span>{r.content.genre}</p>}
+          {(r.uploader_name || r.uploader_email) && <p className="min-w-0 break-words"><span className="text-muted-foreground">Submitted by </span>{r.uploader_name || r.uploader_email}</p>}
+        </div>
+        {admin && dropboxFolders.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {dropboxFolders.map(([href, uploader]) => <a key={href} href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-border px-3 py-2 text-sm hover:border-foreground">
+              <ExternalLink aria-hidden="true" className="h-4 w-4" />
+              {dropboxFolders.length === 1 ? "Open release in Dropbox" : `Dropbox · ${uploader}`}
+            </a>)}
+          </div>
+        )}
       </header>
-      {admin && <ExportSubmissions release={id} label="Export release to Excel" />}
-      <WorkbookStatus releaseId={id} />
-      <dl className="grid gap-4 text-sm sm:grid-cols-2">
-        {[
-          ["Submitted by", [r.uploader_name, r.uploader_email].filter(Boolean).join(" — ")],
-          ["Label", r.content.label],
-          ["Genre", r.content.genre],
-          ["Playlist / brief", r.content.playlistBrief],
-          ["Notes", r.content.generalNotes],
-          ["Artwork direction", r.content.artworkInspiration],
-        ]
-          .filter(([, v]) => v)
-          .map(([label, value]) => (
-            <div key={label}>
-              <dt className="mb-1 text-xs text-muted-foreground">{label}</dt>
-              <dd className="whitespace-pre-wrap break-words">{value}</dd>
+      <section aria-label="Tracks and downloads" className="space-y-3 border-t border-border pt-4">
+        <h3 className="text-sm font-medium">Listen & download</h3>
+        {files.isPending && <p role="status" className="text-xs text-muted-foreground">Loading files…</p>}
+        {files.isError && <LoadError retry={() => files.refetch()} />}
+        {r.content.tracks?.map((track, index) => {
+          const uploaded = files.data?.filter((file) => file.track_id === track.id && file.uploaded) ?? [];
+          const stereo = uploaded.filter((file) => file.kind === "stereo");
+          const stems = uploaded.filter((file) => file.kind === "stems");
+          return <section key={track.id} aria-label={track.title || `Track ${index + 1}`} className="min-w-0 border border-border px-4 pt-4">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <h4 className="min-w-0 break-words font-display text-lg"><span className="mr-2 text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>{track.title || "Untitled track"}</h4>
+              <span className="text-xs capitalize text-muted-foreground">{track.stereoStatus || (track.audioDelivery === "both" ? "Stereo + stems" : track.audioDelivery)}</span>
             </div>
-          ))}
-      </dl>
+            {track.composers && <p className="mt-1 break-words text-xs text-muted-foreground">Composers: {track.composers}</p>}
+            {track.notes && <p className="mt-2 whitespace-pre-wrap break-words text-sm">{track.notes}</p>}
+            <div className="mt-2 divide-y divide-border">
+              {stereo.map((file) => <PrivateFile key={file.id} file={file} showDropbox={admin} />)}
+              {files.isSuccess && stereo.length === 0 && <p className="py-3 text-xs text-muted-foreground">Stereo not uploaded</p>}
+              {stems.map((file) => <PrivateFile key={file.id} file={file} showDropbox={admin} />)}
+              {files.isSuccess && stems.length === 0 && ["both", "stems"].includes(track.audioDelivery) && <p className="py-3 text-xs text-muted-foreground">Stems not uploaded</p>}
+            </div>
+          </section>;
+        })}
+        {!r.content.tracks?.length && <p className="text-xs text-muted-foreground">No tracks in this release yet.</p>}
+        {files.data?.some((file) => file.kind === "artwork" && file.uploaded) && <details className="border-b border-border py-3">
+          <summary className="cursor-pointer text-sm">Artwork files</summary>
+          {files.data.filter((file) => file.kind === "artwork" && file.uploaded).map((file) => <PrivateFile key={file.id} file={file} showDropbox={admin} />)}
+        </details>}
+      </section>
       {admin && !r.artist_id && (
-        <section className="space-y-3 border border-border p-4">
-          <h3 className="text-sm font-medium">Approve artist name</h3>
+        <details className="border-t border-border pt-4">
+          <summary className="cursor-pointer text-sm font-medium">Artist name needs approval</summary>
+          <div className="mt-4 space-y-3">
           <p className="text-xs text-muted-foreground">
             {r.suggested_artist
               ? `Suggested: ${r.suggested_artist}`
@@ -219,39 +249,9 @@ export default function ReleaseDetail({
           <p className="text-xs text-muted-foreground">
             Labels and genre tags can be edited under Artists.
           </p>
-        </section>
-      )}
-      <section className="space-y-4">
-        <h3 className="text-sm font-medium">Tracks & files</h3>
-        {files.isError && <LoadError retry={() => files.refetch()} />}{" "}
-        {r.content.tracks?.map((track, index) => (
-          <div key={track.id} className="space-y-3">
-            <div>
-              <h4 className="text-sm">
-                {index + 1}. {track.title || "Untitled track"}
-              </h4>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {track.composers} · {track.stereoStatus || track.audioDelivery}
-              </p>
-              {track.notes && (
-                <p className="mt-2 whitespace-pre-wrap text-sm">
-                  {track.notes}
-                </p>
-              )}
-            </div>
-            {files.data
-              ?.filter((f) => f.track_id === track.id && f.uploaded)
-              .map((f) => (
-                <PrivateFile key={f.id} file={f} />
-              ))}
           </div>
-        ))}
-        {files.data
-          ?.filter((f) => f.kind === "artwork" && f.uploaded)
-          .map((f) => (
-            <PrivateFile key={f.id} file={f} />
-          ))}
-      </section>
+        </details>
+      )}
       {admin && ["new", "in_review", "accepted"].includes(r.status) && (
         <section className="space-y-4 border-t border-border pt-5">
           <h3 className="text-sm font-medium">Review decision</h3>
@@ -375,6 +375,30 @@ export default function ReleaseDetail({
           )}
         </section>
       )}
+      <details className="border-t border-border pt-4">
+        <summary className="cursor-pointer text-sm font-medium">Release details & {admin ? "export" : "workbook"}</summary>
+        <div className="mt-4 space-y-4">
+          {admin && <ExportSubmissions release={id} label="Export release to Excel" />}
+          <WorkbookStatus releaseId={id} />
+          <dl className="grid gap-4 text-sm sm:grid-cols-2">
+            {[
+              ["Submitted by", [r.uploader_name, r.uploader_email].filter(Boolean).join(" — ")],
+              ["Label", r.content.label],
+              ["Genre", r.content.genre],
+              ["Playlist / brief", r.content.playlistBrief],
+              ["Notes", r.content.generalNotes],
+              ["Artwork direction", r.content.artworkInspiration],
+            ]
+              .filter(([, v]) => v)
+              .map(([label, value]) => (
+                <div key={label}>
+                  <dt className="mb-1 text-xs text-muted-foreground">{label}</dt>
+                  <dd className="whitespace-pre-wrap break-words">{value}</dd>
+                </div>
+              ))}
+          </dl>
+        </div>
+      </details>
       {admin && pendingNotifications.length > 0 && (
         <section className="space-y-3 border border-border p-4">
           <h3 className="text-sm">Email delivery</h3>
@@ -397,10 +421,9 @@ export default function ReleaseDetail({
         </section>
       )}
       {discussion.isError && <LoadError retry={() => discussion.refetch()} />}
-      <section className="space-y-4 border-t border-border pt-5">
-        <h3 className="text-sm font-medium">
-          Messages with {admin ? "the artist" : "PARASENS"}
-        </h3>
+      <details className="border-t border-border pt-4">
+        <summary className="cursor-pointer text-sm font-medium">Messages with {admin ? "the artist" : "PARASENS"} <span className="text-muted-foreground">({discussion.data?.messages.length ?? 0})</span></summary>
+        <div className="mt-4 space-y-4">
         {discussion.data?.messages.map((m) => (
           <div key={m.id} className="border-l border-border pl-3">
             <p className="text-[10px] text-muted-foreground">
@@ -445,10 +468,12 @@ export default function ReleaseDetail({
             trigger review emails.
           </p>
         </form>
-      </section>
+        </div>
+      </details>
       {admin && (
-        <section className="space-y-4 border-t border-border pt-5">
-          <h3 className="text-sm font-medium">Private admin notes</h3>
+        <details className="border-t border-border pt-4">
+          <summary className="cursor-pointer text-sm font-medium">Private admin notes <span className="text-muted-foreground">({discussion.data?.notes.length ?? 0})</span></summary>
+          <div className="mt-4 space-y-4">
           <p className="text-xs text-muted-foreground">
             Only administrators can see these notes.
           </p>
@@ -488,10 +513,12 @@ export default function ReleaseDetail({
               Save private note
             </Button>
           </form>
-        </section>
+          </div>
+        </details>
       )}
-      <section className="space-y-3 border-t border-border pt-5">
-        <h3 className="text-sm font-medium">Review history</h3>
+      <details className="border-t border-border pt-4">
+        <summary className="cursor-pointer text-sm font-medium">Review history <span className="text-muted-foreground">({discussion.data?.events.length ?? 0})</span></summary>
+        <div className="mt-4 space-y-3">
         {discussion.data?.events.map((event) => (
           <div key={event.id} className="text-sm">
             <p>
@@ -507,7 +534,8 @@ export default function ReleaseDetail({
             )}
           </div>
         ))}
-      </section>
+        </div>
+      </details>
     </article>
   );
 }

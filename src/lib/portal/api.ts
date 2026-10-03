@@ -71,6 +71,7 @@ export type PortalFile = {
   mime: string;
   uploaded: boolean;
   provider?: "supabase" | "dropbox";
+  dropbox_web_path?: string | null;
   uploader_email?: string;
   uploader_name?: string;
 };
