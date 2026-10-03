@@ -112,7 +112,7 @@ try {
   assert.equal((await legacyDownload).suggestedFilename(), "Second light.wav");
   assert.ok(fileRequests.some((request) => request.legacy), "Legacy Supabase files still use authorized signed URLs");
   await page.screenshot({ path: output + "/listening-desktop.png", fullPage: true });
-  await page.getByText("Release details & export", { exact: true }).click();
+  await page.getByRole("tab", { name: "Release info", exact: true }).click();
   await page.getByText("Dropbox workbook needs attention.").waitFor();
   await page.getByRole("button", { name: "Retry workbook update" }).click();
   await page.getByText(/Dropbox workbook updated/).waitFor();
@@ -122,10 +122,22 @@ try {
   await page.getByText("Export unavailable. Please retry.", {exact:true}).waitFor();
   assert.equal(requests[2].p_release, rid);
   assert.equal(await page.getByRole("button", {name:"Export release to Excel"}).isEnabled(), true);
-  await page.getByText("Release details & export", { exact: true }).click();
-  await page.getByText("Messages with the artist (0)", { exact: true }).click();
-  await page.getByRole("textbox", { name: "Message to artist or administrator" }).waitFor();
-  await page.getByText("Messages with the artist (0)", { exact: true }).click();
+  await page.getByRole("tab", { name: "Messages", exact: true }).click();
+  const messageBox = page.getByRole("textbox", { name: "Message to artist or administrator" });
+  await messageBox.fill("Unsent message draft");
+  await page.getByRole("tab", { name: "Admin notes", exact: true }).click();
+  await page.getByRole("textbox", { name: "Private admin note", exact: true }).fill("Unsent private note");
+  await page.getByRole("tab", { name: "History", exact: true }).click();
+  await page.getByText("No review activity yet.").waitFor();
+  await page.getByRole("tab", { name: "Messages", exact: true }).click();
+  assert.equal(await messageBox.inputValue(), "Unsent message draft");
+  await page.getByRole("tab", { name: "Messages", exact: true }).press("ArrowRight");
+  await page.getByRole("textbox", { name: "Private admin note", exact: true }).waitFor();
+  assert.equal(await page.getByRole("textbox", { name: "Private admin note", exact: true }).inputValue(), "Unsent private note");
+  await page.getByRole("tab", { name: "Tracks & files", exact: false }).click();
+  assert.equal(await page.locator('audio[aria-label="Listen to Northern light.wav"]').count(), 1, "Audio remains mounted across tabs");
+  assert.equal(await page.locator("article > :last-child").getAttribute("aria-label"), "Review decision", "Review decision is the final section");
+  assert.equal(await page.getByRole("tabpanel").count(), 1, "Only the selected section is exposed");
   await page.setViewportSize({width:390,height:844});
   await page.getByRole("button", { name: "Choose another submission", exact: true }).click();
   await page.getByRole("button", { name: /^Northern light/ }).click();
@@ -139,7 +151,10 @@ try {
   assert.equal(await page.getByRole("link", { name: /Dropbox/ }).count(), 0);
   assert.equal(await page.getByRole("button", { name: "Accept", exact: true }).count(), 0);
   await page.getByRole("button", { name: "Play Northern light.wav", exact: true }).waitFor();
+  await page.getByRole("tab", { name: "Release info", exact: true }).click();
+  await page.getByText("A quiet piano recording for evening listening.", { exact: true }).waitFor();
+  assert.equal(await page.getByRole("tab", { name: "Admin notes", exact: true }).count(), 0);
   assert.deepEqual(errors, []);
-  console.log("Passed: audio playback, file failure recovery, stereo/stems/legacy downloads, encoded Dropbox links, collapsed details, artist permissions, Excel exports and mobile navigation/layout.");
+  console.log("Passed: audio playback, file failure recovery, stereo/stems/legacy downloads, encoded Dropbox links, section tabs, keyboard navigation, preserved drafts/audio, review footer, artist permissions, Excel exports and mobile navigation/layout.");
   console.log("Screenshots: " + output);
 } finally { await browser?.close(); server.kill(); }

@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SearchableSelect from "@/components/music/SearchableSelect";
 import PrivateFile from "@/components/portal/PrivateFile";
 import ExportSubmissions from "@/components/portal/ExportSubmissions";
@@ -38,6 +39,7 @@ export default function ReleaseDetail({
   admin: boolean;
 }) {
   const cache = useQueryClient();
+  const [section, setSection] = useState("tracks");
   const [message, setMessage] = useState("");
   const [note, setNote] = useState("");
   const [decision, setDecision] = useState("");
@@ -105,7 +107,7 @@ export default function ReleaseDetail({
   const sendNotifications = async () => {
     const result = await portalAdmin({ action: "notify", releaseId: id });
     if (result.failed)
-      toast.warning("The review is saved. Some emails need attention below.");
+      toast.warning("The review is saved. Some emails need attention in Messages.");
     else toast.success(result.message);
     await cache.invalidateQueries({ queryKey: ["portal-discussion", id] });
   };
@@ -127,7 +129,7 @@ export default function ReleaseDetail({
           <p className="mt-3 text-sm">Awaiting artist changes</p>
         )}
         <p className="mt-3 text-xs text-muted-foreground">
-          {r.content.releaseType} · {r.content.tracks?.length ?? 0} {(r.content.tracks?.length ?? 0) === 1 ? "track" : "tracks"} ·
+          {r.content.releaseType} · {r.content.tracks?.length ?? 0} {(r.content.tracks?.length ?? 0) === 1 ? "track" : "tracks"} ·{" "}
           Updated {new Date(r.updated_at).toLocaleDateString()}
         </p>
         {editable && (
@@ -138,11 +140,6 @@ export default function ReleaseDetail({
             {r.awaiting_changes ? "Make requested changes" : "Continue draft"}
           </Link>
         )}
-        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs">
-          {r.content.label && <p><span className="text-muted-foreground">Label </span>{r.content.label}</p>}
-          {r.content.genre && <p><span className="text-muted-foreground">Genre </span>{r.content.genre}</p>}
-          {(r.uploader_name || r.uploader_email) && <p className="min-w-0 break-words"><span className="text-muted-foreground">Submitted by </span>{r.uploader_name || r.uploader_email}</p>}
-        </div>
         {admin && dropboxFolders.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
             {dropboxFolders.map(([href, uploader]) => <a key={href} href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-border px-3 py-2 text-sm hover:border-foreground">
@@ -152,109 +149,303 @@ export default function ReleaseDetail({
           </div>
         )}
       </header>
-      <section aria-label="Tracks and downloads" className="space-y-3 border-t border-border pt-4">
-        <h3 className="text-sm font-medium">Listen & download</h3>
-        {files.isPending && <p role="status" className="text-xs text-muted-foreground">Loading files…</p>}
-        {files.isError && <LoadError retry={() => files.refetch()} />}
-        {r.content.tracks?.map((track, index) => {
-          const uploaded = files.data?.filter((file) => file.track_id === track.id && file.uploaded) ?? [];
-          const stereo = uploaded.filter((file) => file.kind === "stereo");
-          const stems = uploaded.filter((file) => file.kind === "stems");
-          return <section key={track.id} aria-label={track.title || `Track ${index + 1}`} className="min-w-0 border border-border px-4 pt-4">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <h4 className="min-w-0 break-words font-display text-lg"><span className="mr-2 text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>{track.title || "Untitled track"}</h4>
-              <span className="text-xs capitalize text-muted-foreground">{track.stereoStatus || (track.audioDelivery === "both" ? "Stereo + stems" : track.audioDelivery)}</span>
+      <Tabs value={section} onValueChange={setSection} className="min-w-0">
+        <TabsList aria-label="Submission sections" className="h-auto w-full flex-wrap justify-start gap-x-5 gap-y-1 rounded-none border-b border-border bg-transparent p-0">
+          {[
+            ["tracks", "Tracks & files", r.content.tracks?.length ?? 0],
+            ["info", "Release info", null],
+            ["messages", "Messages", discussion.data?.messages.length ?? 0],
+            ...(admin ? [["notes", "Admin notes", discussion.data?.notes.length ?? 0]] : []),
+            ["history", "History", discussion.data?.events.length ?? 0],
+          ].map(([value, label, count]) => (
+            <TabsTrigger key={value} value={String(value)} className="gap-2 rounded-none border-b-2 border-transparent px-0 py-3 text-sm data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+              {label}{typeof count === "number" && count > 0 && <span className="text-xs text-muted-foreground">{count}</span>}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        <TabsContent value="tracks" forceMount className="mt-5 min-w-0 space-y-5 data-[state=inactive]:hidden">
+          <section aria-label="Tracks and downloads" className="space-y-3">
+            <h3 className="text-sm font-medium">Listen & download</h3>
+            {files.isPending && <p role="status" className="text-xs text-muted-foreground">Loading files…</p>}
+            {files.isError && <LoadError retry={() => files.refetch()} />}
+            {r.content.tracks?.map((track, index) => {
+              const uploaded = files.data?.filter((file) => file.track_id === track.id && file.uploaded) ?? [];
+              const stereo = uploaded.filter((file) => file.kind === "stereo");
+              const stems = uploaded.filter((file) => file.kind === "stems");
+              return <section key={track.id} aria-label={track.title || `Track ${index + 1}`} className="min-w-0 border border-border px-4 pt-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <h4 className="min-w-0 break-words font-display text-lg"><span className="mr-2 text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>{track.title || "Untitled track"}</h4>
+                  <span className="text-xs capitalize text-muted-foreground">{track.stereoStatus || (track.audioDelivery === "both" ? "Stereo + stems" : track.audioDelivery)}</span>
+                </div>
+                {track.composers && <p className="mt-1 break-words text-xs text-muted-foreground">Composers: {track.composers}</p>}
+                {track.notes && <p className="mt-2 whitespace-pre-wrap break-words text-sm">{track.notes}</p>}
+                <div className="mt-2 divide-y divide-border">
+                  {stereo.map((file) => <PrivateFile key={file.id} file={file} showDropbox={admin} />)}
+                  {files.isSuccess && stereo.length === 0 && <p className="py-3 text-xs text-muted-foreground">Stereo not uploaded</p>}
+                  {stems.map((file) => <PrivateFile key={file.id} file={file} showDropbox={admin} />)}
+                  {files.isSuccess && stems.length === 0 && ["both", "stems"].includes(track.audioDelivery) && <p className="py-3 text-xs text-muted-foreground">Stems not uploaded</p>}
+                </div>
+              </section>;
+            })}
+            {!r.content.tracks?.length && <p className="text-xs text-muted-foreground">No tracks in this release yet.</p>}
+            {files.data?.some((file) => file.kind === "artwork" && file.uploaded) && <details className="border-b border-border py-3">
+              <summary className="cursor-pointer text-sm">Artwork files</summary>
+              {files.data.filter((file) => file.kind === "artwork" && file.uploaded).map((file) => <PrivateFile key={file.id} file={file} showDropbox={admin} />)}
+            </details>}
+          </section>
+        </TabsContent>
+        <TabsContent value="info" forceMount className="mt-5 min-w-0 space-y-5 data-[state=inactive]:hidden">
+          <section>
+            <h3 className="text-sm font-medium">Release info</h3>
+            <div className="mt-4 space-y-4">
+              <dl className="grid gap-4 text-sm sm:grid-cols-2">
+                {[
+                  ["Submitted by", [r.uploader_name, r.uploader_email].filter(Boolean).join(" — ")],
+                  ["Label", r.content.label],
+                  ["Genre", r.content.genre],
+                  ["Playlist / brief", r.content.playlistBrief],
+                  ["Notes", r.content.generalNotes],
+                  ["Artwork direction", r.content.artworkInspiration],
+                ]
+                  .filter(([, v]) => v)
+                  .map(([label, value]) => (
+                    <div key={label}>
+                      <dt className="mb-1 text-xs text-muted-foreground">{label}</dt>
+                      <dd className="whitespace-pre-wrap break-words">{value}</dd>
+                    </div>
+                  ))}
+              </dl>
+              <div className="space-y-3 border-t border-border pt-4">
+                <h4 className="text-sm font-medium">Release workbook</h4>
+                {admin && <ExportSubmissions release={id} label="Export release to Excel" />}
+                <WorkbookStatus releaseId={id} />
+              </div>
             </div>
-            {track.composers && <p className="mt-1 break-words text-xs text-muted-foreground">Composers: {track.composers}</p>}
-            {track.notes && <p className="mt-2 whitespace-pre-wrap break-words text-sm">{track.notes}</p>}
-            <div className="mt-2 divide-y divide-border">
-              {stereo.map((file) => <PrivateFile key={file.id} file={file} showDropbox={admin} />)}
-              {files.isSuccess && stereo.length === 0 && <p className="py-3 text-xs text-muted-foreground">Stereo not uploaded</p>}
-              {stems.map((file) => <PrivateFile key={file.id} file={file} showDropbox={admin} />)}
-              {files.isSuccess && stems.length === 0 && ["both", "stems"].includes(track.audioDelivery) && <p className="py-3 text-xs text-muted-foreground">Stems not uploaded</p>}
-            </div>
-          </section>;
-        })}
-        {!r.content.tracks?.length && <p className="text-xs text-muted-foreground">No tracks in this release yet.</p>}
-        {files.data?.some((file) => file.kind === "artwork" && file.uploaded) && <details className="border-b border-border py-3">
-          <summary className="cursor-pointer text-sm">Artwork files</summary>
-          {files.data.filter((file) => file.kind === "artwork" && file.uploaded).map((file) => <PrivateFile key={file.id} file={file} showDropbox={admin} />)}
-        </details>}
-      </section>
-      {admin && !r.artist_id && (
-        <details className="border-t border-border pt-4">
-          <summary className="cursor-pointer text-sm font-medium">Artist name needs approval</summary>
-          <div className="mt-4 space-y-3">
-          <p className="text-xs text-muted-foreground">
-            {r.suggested_artist
-              ? `Suggested: ${r.suggested_artist}`
-              : "The artist asked PARASENS to choose a name."}{" "}
-            Approving also assigns the submitting account to this act.
-          </p>
-          <SearchableSelect
-            label="Approved artist"
-            value={approvedArtist}
-            onValueChange={setApprovedArtist}
-            options={[
-              { value: "", label: "Choose an existing artist" },
-              ...(directory.data?.artists ?? []).map((a) => ({
-                value: a.id,
-                label: a.name,
-              })),
-            ]}
-          />
-          <Button
-            variant="outline"
-            disabled={busy || !approvedArtist}
-            onClick={() =>
-              run(async () => {
-                await portalRpc("portal_approve_artist", {
-                  p_release: id,
-                  p_artist: approvedArtist,
-                });
-                toast.success("Artist approved and assigned.");
-              })
-            }
-          >
-            Assign selected artist
-          </Button>
-          <div className="flex flex-wrap gap-2">
-            <Input
-              aria-label="Approved new artist name"
-              placeholder={r.suggested_artist || "New artist name"}
-              value={artistName}
-              onChange={(e) => setArtistName(e.target.value)}
-              className="min-w-44 flex-1"
-            />
-            <Button
-              disabled={busy || !(artistName || r.suggested_artist).trim()}
-              onClick={() =>
-                run(async () => {
-                  const created = await portalRpc<string>(
-                    "portal_save_artist",
-                    { p_name: (artistName || r.suggested_artist).trim() },
-                  );
-                  setApprovedArtist(created);
-                  await portalRpc("portal_approve_artist", {
+          </section>
+          {admin && !r.artist_id && (
+            <details className="border-t border-border pt-4">
+              <summary className="cursor-pointer text-sm font-medium">Artist name needs approval</summary>
+              <div className="mt-4 space-y-3">
+              <p className="text-xs text-muted-foreground">
+                {r.suggested_artist
+                  ? `Suggested: ${r.suggested_artist}`
+                  : "The artist asked PARASENS to choose a name."}{" "}
+                Approving also assigns the submitting account to this act.
+              </p>
+              <SearchableSelect
+                label="Approved artist"
+                value={approvedArtist}
+                onValueChange={setApprovedArtist}
+                options={[
+                  { value: "", label: "Choose an existing artist" },
+                  ...(directory.data?.artists ?? []).map((a) => ({
+                    value: a.id,
+                    label: a.name,
+                  })),
+                ]}
+              />
+              <Button
+                variant="outline"
+                disabled={busy || !approvedArtist}
+                onClick={() =>
+                  run(async () => {
+                    await portalRpc("portal_approve_artist", {
+                      p_release: id,
+                      p_artist: approvedArtist,
+                    });
+                    toast.success("Artist approved and assigned.");
+                  })
+                }
+              >
+                Assign selected artist
+              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Input
+                  aria-label="Approved new artist name"
+                  placeholder={r.suggested_artist || "New artist name"}
+                  value={artistName}
+                  onChange={(e) => setArtistName(e.target.value)}
+                  className="min-w-44 flex-1"
+                />
+                <Button
+                  disabled={busy || !(artistName || r.suggested_artist).trim()}
+                  onClick={() =>
+                    run(async () => {
+                      const created = await portalRpc<string>(
+                        "portal_save_artist",
+                        { p_name: (artistName || r.suggested_artist).trim() },
+                      );
+                      setApprovedArtist(created);
+                      await portalRpc("portal_approve_artist", {
+                        p_release: id,
+                        p_artist: created,
+                      });
+                      toast.success("Artist created and assigned.");
+                    })
+                  }
+                >
+                  Create & assign
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Labels and genre tags can be edited under Artists.
+              </p>
+              </div>
+            </details>
+          )}
+        </TabsContent>
+        <TabsContent value="messages" forceMount className="mt-5 min-w-0 space-y-5 data-[state=inactive]:hidden">
+          {admin && pendingNotifications.length > 0 && (
+            <section className="space-y-3 border border-border p-4">
+              <h3 className="text-sm">Email delivery</h3>
+              {pendingNotifications.map((n) => (
+                <p key={n.id} className="break-words text-xs text-muted-foreground">
+                  {n.recipient}: {n.state}
+                  {n.error ? ` — ${n.error}` : ""}
+                </p>
+              ))}
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={
+                  busy || pendingNotifications.every((n) => n.state === "uncertain")
+                }
+                onClick={() => run(sendNotifications)}
+              >
+                Retry pending emails
+              </Button>
+            </section>
+          )}
+          {discussion.isError && <LoadError retry={() => discussion.refetch()} />}
+          <section>
+            <h3 className="text-sm font-medium">Messages with {admin ? "the artist" : "PARASENS"}</h3>
+            <div className="mt-4 space-y-4">
+            {discussion.isPending && <p role="status" className="text-sm text-muted-foreground">Loading messages…</p>}
+            {discussion.isSuccess && !discussion.data.messages.length && <p className="text-sm text-muted-foreground">No messages yet.</p>}
+            {discussion.data?.messages.map((m) => (
+              <div key={m.id} className="border-l border-border pl-3">
+                <p className="text-[10px] text-muted-foreground">
+                  {m.author_role === "admin" ? "PARASENS" : "Artist"} ·{" "}
+                  {new Date(m.created_at).toLocaleString()}
+                </p>
+                <p className="mt-1 whitespace-pre-wrap break-words text-sm">
+                  {m.body}
+                </p>
+              </div>
+            ))}
+            <form
+              className="space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void run(async () => {
+                  await portalRpc("portal_add_message", {
                     p_release: id,
-                    p_artist: created,
+                    p_body: message,
                   });
-                  toast.success("Artist created and assigned.");
-                })
-              }
+                  setMessage("");
+                });
+              }}
             >
-              Create & assign
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Labels and genre tags can be edited under Artists.
-          </p>
-          </div>
-        </details>
-      )}
+              <textarea
+                aria-label="Message to artist or administrator"
+                placeholder={
+                  admin ? "Message visible to the artist…" : "Message PARASENS…"
+                }
+                maxLength={10000}
+                required
+                rows={3}
+                className="w-full border border-border bg-background p-3 text-sm"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+              <Button variant="outline" disabled={busy || !message.trim()}>
+                Post message
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Messages stay in the portal. Only declines and requests for changes
+                trigger review emails.
+              </p>
+            </form>
+            </div>
+          </section>
+        </TabsContent>
+        {admin && (
+        <TabsContent value="notes" forceMount className="mt-5 min-w-0 space-y-5 data-[state=inactive]:hidden">
+            <section>
+            <h3 className="text-sm font-medium">Private admin notes</h3>
+              <div className="mt-4 space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Only administrators can see these notes.
+              </p>
+              {discussion.data?.notes.map((n) => (
+                <p
+                  key={n.id}
+                  className="whitespace-pre-wrap break-words border-l border-border pl-3 text-sm"
+                >
+                  {n.body}
+                </p>
+              ))}
+              <form
+                className="space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void run(async () => {
+                    await portalRpc("portal_add_message", {
+                      p_release: id,
+                      p_body: note,
+                      p_private: true,
+                    });
+                    setNote("");
+                  });
+                }}
+              >
+                <textarea
+                  aria-label="Private admin note"
+                  placeholder="Private note…"
+                  maxLength={10000}
+                  required
+                  rows={3}
+                  className="w-full border border-border bg-background p-3 text-sm"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
+                <Button variant="outline" disabled={busy || !note.trim()}>
+                  Save private note
+                </Button>
+              </form>
+              </div>
+            </section>
+        </TabsContent>
+        )}
+        <TabsContent value="history" forceMount className="mt-5 min-w-0 space-y-5 data-[state=inactive]:hidden">
+          <section>
+            <h3 className="text-sm font-medium">Review history</h3>
+            <div className="mt-4 space-y-3">
+            {discussion.isPending && <p role="status" className="text-sm text-muted-foreground">Loading history…</p>}
+            {discussion.isSuccess && !discussion.data.events.length && <p className="text-sm text-muted-foreground">No review activity yet.</p>}
+            {discussion.data?.events.map((event) => (
+              <div key={event.id} className="text-sm">
+                <p>
+                  {actionLabels[event.action] ?? event.action}{" "}
+                  <span className="text-xs text-muted-foreground">
+                    · {new Date(event.created_at).toLocaleString()}
+                  </span>
+                </p>
+                {event.message && (
+                  <p className="mt-1 whitespace-pre-wrap break-words text-muted-foreground">
+                    {event.message}
+                  </p>
+                )}
+              </div>
+            ))}
+            </div>
+          </section>
+        </TabsContent>
+      </Tabs>
       {admin && ["new", "in_review", "accepted"].includes(r.status) && (
-        <section className="space-y-4 border-t border-border pt-5">
+        <section aria-label="Review decision" className="space-y-4 border-t border-border pt-5">
           <h3 className="text-sm font-medium">Review decision</h3>
+          {!r.artist_id && <p className="text-sm text-muted-foreground">Approve the artist in <button type="button" className="underline text-foreground" onClick={() => setSection("info")}>Release info</button> before accepting.</p>}
           <div className="flex flex-wrap gap-2">
             {r.status === "new" && (
               <Button
@@ -328,7 +519,7 @@ export default function ReleaseDetail({
                       await sendNotifications();
                     } catch {
                       toast.warning(
-                        "Review saved; email delivery is pending. Retry below.",
+                        "Review saved; email delivery is pending. Retry in Messages.",
                       );
                     }
                   }
@@ -375,167 +566,6 @@ export default function ReleaseDetail({
           )}
         </section>
       )}
-      <details className="border-t border-border pt-4">
-        <summary className="cursor-pointer text-sm font-medium">Release details & {admin ? "export" : "workbook"}</summary>
-        <div className="mt-4 space-y-4">
-          {admin && <ExportSubmissions release={id} label="Export release to Excel" />}
-          <WorkbookStatus releaseId={id} />
-          <dl className="grid gap-4 text-sm sm:grid-cols-2">
-            {[
-              ["Submitted by", [r.uploader_name, r.uploader_email].filter(Boolean).join(" — ")],
-              ["Label", r.content.label],
-              ["Genre", r.content.genre],
-              ["Playlist / brief", r.content.playlistBrief],
-              ["Notes", r.content.generalNotes],
-              ["Artwork direction", r.content.artworkInspiration],
-            ]
-              .filter(([, v]) => v)
-              .map(([label, value]) => (
-                <div key={label}>
-                  <dt className="mb-1 text-xs text-muted-foreground">{label}</dt>
-                  <dd className="whitespace-pre-wrap break-words">{value}</dd>
-                </div>
-              ))}
-          </dl>
-        </div>
-      </details>
-      {admin && pendingNotifications.length > 0 && (
-        <section className="space-y-3 border border-border p-4">
-          <h3 className="text-sm">Email delivery</h3>
-          {pendingNotifications.map((n) => (
-            <p key={n.id} className="break-words text-xs text-muted-foreground">
-              {n.recipient}: {n.state}
-              {n.error ? ` — ${n.error}` : ""}
-            </p>
-          ))}
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={
-              busy || pendingNotifications.every((n) => n.state === "uncertain")
-            }
-            onClick={() => run(sendNotifications)}
-          >
-            Retry pending emails
-          </Button>
-        </section>
-      )}
-      {discussion.isError && <LoadError retry={() => discussion.refetch()} />}
-      <details className="border-t border-border pt-4">
-        <summary className="cursor-pointer text-sm font-medium">Messages with {admin ? "the artist" : "PARASENS"} <span className="text-muted-foreground">({discussion.data?.messages.length ?? 0})</span></summary>
-        <div className="mt-4 space-y-4">
-        {discussion.data?.messages.map((m) => (
-          <div key={m.id} className="border-l border-border pl-3">
-            <p className="text-[10px] text-muted-foreground">
-              {m.author_role === "admin" ? "PARASENS" : "Artist"} ·{" "}
-              {new Date(m.created_at).toLocaleString()}
-            </p>
-            <p className="mt-1 whitespace-pre-wrap break-words text-sm">
-              {m.body}
-            </p>
-          </div>
-        ))}
-        <form
-          className="space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void run(async () => {
-              await portalRpc("portal_add_message", {
-                p_release: id,
-                p_body: message,
-              });
-              setMessage("");
-            });
-          }}
-        >
-          <textarea
-            aria-label="Message to artist or administrator"
-            placeholder={
-              admin ? "Message visible to the artist…" : "Message PARASENS…"
-            }
-            maxLength={10000}
-            required
-            rows={3}
-            className="w-full border border-border bg-background p-3 text-sm"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
-          <Button variant="outline" disabled={busy || !message.trim()}>
-            Post message
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            Messages stay in the portal. Only declines and requests for changes
-            trigger review emails.
-          </p>
-        </form>
-        </div>
-      </details>
-      {admin && (
-        <details className="border-t border-border pt-4">
-          <summary className="cursor-pointer text-sm font-medium">Private admin notes <span className="text-muted-foreground">({discussion.data?.notes.length ?? 0})</span></summary>
-          <div className="mt-4 space-y-4">
-          <p className="text-xs text-muted-foreground">
-            Only administrators can see these notes.
-          </p>
-          {discussion.data?.notes.map((n) => (
-            <p
-              key={n.id}
-              className="whitespace-pre-wrap break-words border-l border-border pl-3 text-sm"
-            >
-              {n.body}
-            </p>
-          ))}
-          <form
-            className="space-y-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void run(async () => {
-                await portalRpc("portal_add_message", {
-                  p_release: id,
-                  p_body: note,
-                  p_private: true,
-                });
-                setNote("");
-              });
-            }}
-          >
-            <textarea
-              aria-label="Private admin note"
-              placeholder="Private note…"
-              maxLength={10000}
-              required
-              rows={3}
-              className="w-full border border-border bg-background p-3 text-sm"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-            />
-            <Button variant="outline" disabled={busy || !note.trim()}>
-              Save private note
-            </Button>
-          </form>
-          </div>
-        </details>
-      )}
-      <details className="border-t border-border pt-4">
-        <summary className="cursor-pointer text-sm font-medium">Review history <span className="text-muted-foreground">({discussion.data?.events.length ?? 0})</span></summary>
-        <div className="mt-4 space-y-3">
-        {discussion.data?.events.map((event) => (
-          <div key={event.id} className="text-sm">
-            <p>
-              {actionLabels[event.action] ?? event.action}{" "}
-              <span className="text-xs text-muted-foreground">
-                · {new Date(event.created_at).toLocaleString()}
-              </span>
-            </p>
-            {event.message && (
-              <p className="mt-1 whitespace-pre-wrap break-words text-muted-foreground">
-                {event.message}
-              </p>
-            )}
-          </div>
-        ))}
-        </div>
-      </details>
     </article>
   );
 }
