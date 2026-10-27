@@ -34,9 +34,59 @@ The file function bundle pins ExcelJS to `npm:exceljs@4.4.0`. Local source keeps
 
 ## Still required before launch
 
-1. Configure production Auth URLs, signup policy and SMTP. Connect a dedicated `CONTACT_FORM_RESEND_API_KEY` for website forms and `RESEND_API_KEY` for portal notifications. The development fallback `RESEND_API_KEY 2` remains supported and untouched.
+Email/sign-in setup started on 27 October 2026: public signups were disabled
+(save success confirmed), anonymous sign-in remains disabled, and email
+confirmation remains enabled. The email provider showed a 3600-second link
+expiry. Site URL `https://parasens.com` and the exact allowed redirect
+`https://parasens.com/portal/auth/confirm` were saved successfully.
+
+Production SMTP is saved with sender `PARASENS <portal@mail.parasens.com>`,
+host `smtp.resend.com`, port `465`, and username `resend`. The owner created
+the `PARASENS Production Auth` key and entered it themselves. A full page
+reload confirmed SMTP enabled, a stored hidden password, and disabled Save.
+Delivery has not yet been tested.
+
+After the owner signed in, Resend confirmed `mail.parasens.com` is verified
+and ready to send; tracking still offers setup rather than showing an active
+tracking subdomain. The Auth key was prepared with **Sending access** restricted
+to **mail.parasens.com**; its creation is confirmed in the key listing.
+
+Both repository email templates are installed in production. Magic Link uses
+subject `Your PARASENS sign-in link`; Invite User uses `Your PARASENS artist
+portal invitation`. Preview confirmed the intended content and token-fragment
+links. Magic Link was reopened to confirm persistence; Invite User showed a
+successful-save notice. SMTP sign-in delivery has not yet been tested.
+
+Two additional key forms are prepared in Chrome, each restricted to sending
+from `mail.parasens.com`: `PARASENS Production Portal` and
+`PARASENS Production Forms`. Their matching production secret fields are
+prepared as `RESEND_API_KEY` and `CONTACT_FORM_RESEND_API_KEY`, respectively.
+Both keys are confirmed created in Resend with Sending access. Both secrets
+were saved in Supabase at 15:18:26 UTC on 27 October. The owner suspected a
+mix-up and explicitly requested testing. One labelled contact-form test to
+`hello@parasens.com` returned HTTP 200 and was delivered:
+[email receipt](https://resend.com/emails/01a17df1-fdaa-7476-ba21-dad4ee8e18a6).
+Its [Resend log](https://resend.com/logs/1884ba1f-1b70-4572-bcd6-bc19b4f49b44)
+identifies **PARASENS Production Portal**, confirming that
+`CONTACT_FORM_RESEND_API_KEY` initially held the portal-labelled key. Both
+have sending permissions, so the mix-up did not prevent this email.
+
+The owner corrected both assignments at 15:22:54 UTC. The saved SHA-256
+fingerprints swapped exactly, confirming the previously tested Portal key is
+now in `RESEND_API_KEY`. A fresh authorised contact-form retest returned HTTP
+200 and was delivered to `hello@parasens.com` using **PARASENS Production
+Forms**, as verified in the [retest log](https://resend.com/logs/8b153888-882d-4a00-9eeb-87a0d6738f39).
+The [retest receipt](https://resend.com/emails/01a17df5-cab5-73d4-9670-124905e4cf28)
+confirms delivery at 16:23 Europe/Stockholm. Both function-key assignments are
+now correct. Retest request ID: `cb87c5a3-20b5-4d2c-be31-e8333edacc87`.
+The test request ID is `b8c11b2b-f1de-48e1-be09-470b04467013`; its existing
+ledger entry must be retained for idempotency. Replaying that request would
+not test a corrected key because it is already marked sent. No artist
+submission or account was created. Existing development keys were untouched.
+
+1. Portal invitation and SMTP sign-in delivery still need verification; form delivery and both function-key assignments are verified. The development fallback `RESEND_API_KEY 2` remains supported and untouched.
 2. Connect Dropbox and configure workbook synchronisation using `docs/dropbox-and-excel-setup.md`.
 3. Import the intended music catalogue, excluding test submissions and accounts.
 4. Connect Cloudflare production variables to this project, then verify real sign-in, email, upload and catalogue flows before switching the public website.
 
-No production Resend/Dropbox credentials, catalogue import, Cloudflare switch or public launch were performed in this stage.
+Dropbox credentials, catalogue import, Cloudflare switch and public launch remain outstanding.
