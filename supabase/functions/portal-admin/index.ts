@@ -1,3 +1,4 @@
+import { portalOrigin } from "../_shared/portal-origin.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.115.0";
 import { createAdminHandler, type MailJob } from "./handler.ts";
 const url = Deno.env.get("SUPABASE_URL")!;
@@ -8,7 +9,7 @@ const service = createClient(url, serviceKey, {
 });
 Deno.serve(
   createAdminHandler({
-    origin: "https://development.parasens-ambient-soundscape.pages.dev",
+    origin: portalOrigin(key => Deno.env.get(key)),
     configured: Boolean(resend),
     authorize: async (request) => {
       const token = request.headers.get("Authorization");

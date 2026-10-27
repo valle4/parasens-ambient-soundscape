@@ -1,10 +1,11 @@
+import { portalOrigin } from "../_shared/portal-origin.ts";
 import { contactEmail, createContactHandler } from "./handler.ts";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 // Dedicated website-forms secret; portal notifications keep their existing RESEND_API_KEY.
-const resendKey = Deno.env.get("RESEND_API_KEY 2");
-const origin = Deno.env.get("CONTACT_FORM_ORIGIN") || "https://development.parasens-ambient-soundscape.pages.dev";
+const resendKey = Deno.env.get("CONTACT_FORM_RESEND_API_KEY") || Deno.env.get("RESEND_API_KEY 2");
+const origin = portalOrigin(key => Deno.env.get(key), "CONTACT_FORM_ORIGIN");
 
 async function rpc(name: string, body: object) {
   const response = await fetch(`${url}/rest/v1/rpc/${name}`, {

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
+import { portalOrigin } from "../supabase/functions/_shared/portal-origin.ts";
 const source = (
   await readFile(
     new URL(
@@ -11,7 +12,7 @@ const source = (
     ),
     "utf8",
   )
-).replace(/^import .*?;\s*/s, "");
+).replace(/^import .*?;\s*/gm, "");
 const code = ts.transpileModule(source, {
   compilerOptions: {
     target: ts.ScriptTarget.ES2022,
@@ -70,11 +71,13 @@ function handler(options = {}) {
         get: (key) =>
           ({
             SUPABASE_URL: "https://test.supabase.co",
+            PORTAL_ORIGIN: "https://development.parasens-ambient-soundscape.pages.dev",
             SUPABASE_ANON_KEY: "public-key",
             SUPABASE_SERVICE_ROLE_KEY: "server-only",
           })[key],
       },
     },
+    portalOrigin,
     createClient: (_, key) => (key === "server-only" ? service : client),
     Response,
     Request,

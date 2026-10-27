@@ -1,10 +1,11 @@
+import { portalOrigin } from "../_shared/portal-origin.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.115.0";
 
 Deno.serve(async (request: Request) => {
   const origin = request.headers.get("Origin") ?? "";
   const allowed = (
     Deno.env.get("MUSIC_PORTAL_ORIGINS") ??
-    "https://development.parasens-ambient-soundscape.pages.dev"
+    portalOrigin(key => Deno.env.get(key))
   )
     .split(",")
     .map((s) => s.trim());

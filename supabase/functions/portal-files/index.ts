@@ -1,3 +1,4 @@
+import { portalOrigin } from "../_shared/portal-origin.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.115.0";
 import { createFileHandler } from "./handler.ts";
 import { dropboxClient, verifyDropboxFile } from "./dropbox.ts";
@@ -5,7 +6,7 @@ import { releaseWorkbook, type ExportData } from "../_shared/release-workbook.ts
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const origin = Deno.env.get("PORTAL_ORIGIN") || "https://development.parasens-ambient-soundscape.pages.dev";
+const origin = portalOrigin(key => Deno.env.get(key));
 const config = { appKey: Deno.env.get("DROPBOX_APP_KEY") || "", appSecret: Deno.env.get("DROPBOX_APP_SECRET") || "", refreshToken: Deno.env.get("DROPBOX_REFRESH_TOKEN") || "", expectedEmail: Deno.env.get("DROPBOX_ACCOUNT_EMAIL") || "" };
 const configured = Object.values(config).every(Boolean);
 const enabled = Deno.env.get("PORTAL_UPLOAD_PROVIDER") === "dropbox";

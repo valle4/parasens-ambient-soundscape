@@ -7,7 +7,7 @@ test('deployed adapter isolates server credentials and calls only the expected p
   const secret = 'TEST-SERVICE-KEY';
   const resend = 'TEST-RESEND-KEY';
   const project = 'https://test.supabase.co';
-  const env = { SUPABASE_URL: project, SUPABASE_SERVICE_ROLE_KEY: secret, RESEND_API_KEY: resend };
+  const env = { PORTAL_ORIGIN: 'https://parasens.com', SUPABASE_URL: project, SUPABASE_SERVICE_ROLE_KEY: secret, RESEND_API_KEY: resend };
   const oldDeno = globalThis.Deno;
   const oldFetch = globalThis.fetch;
   let handler;
@@ -50,6 +50,8 @@ test('deployed adapter isolates server credentials and calls only the expected p
   assert.equal(mail.from, 'PARASENS <portal@mail.parasens.com>');
   assert.deepEqual(mail.to, ['approved@example.com']);
   assert.match(mail.text, /72 hours/);
+  assert.ok(mail.text.includes('https://parasens.com/portal/auth/confirm#'));
+  assert.equal(mail.text.includes('development.parasens'), false);
   const token = mail.text.match(/#invitation_token=([A-Za-z0-9_-]{43})/)[1];
   assert.notEqual(calls[0].body.digest, token);
   assert.match(calls[0].body.digest, /^[a-f0-9]{64}$/);

@@ -13,10 +13,12 @@ test("private admin workspace, submissions and permissions", async (t) => {
   );
   for (const file of [
     "202609200001_music_library.sql",
+    "20260920180000_portal_invitations.sql",
     "202609270001_admin_workspace.sql",
     "202609270002_artist_account_assignment.sql",
     "202609270004_delete_artist.sql",
     "202609280001_dropbox_exports.sql",
+    "202610270001_production_configuration.sql",
   ])
     await db.exec(
       await readFile(
@@ -24,6 +26,7 @@ test("private admin workspace, submissions and permissions", async (t) => {
         "utf8",
       ),
     );
+  await db.exec("update public.portal_runtime_settings set site_origin='https://parasens.com'");
   const q = async (s, v = []) => (await db.query(s, v)).rows;
   const rpc = async (n, v = []) =>
     (
@@ -228,6 +231,8 @@ test("private admin workspace, submissions and permissions", async (t) => {
         ]),
       );
       assert.equal((await q("select * from portal_notifications")).length, 1);
+      assert.match((await q("select body from portal_notifications"))[0].body, /https:\/\/parasens.com\/portal$/);
+      await assert.rejects(as(admin, () => q("update portal_runtime_settings set site_origin='https://evil.example'")), /permission denied/);
       assert.equal(
         (await as(a, () => q("select * from portal_notifications"))).length,
         0,

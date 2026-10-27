@@ -1,6 +1,7 @@
+import { portalOrigin } from "../_shared/portal-origin.ts";
 import { createInvitationHandler, tokenDigest, type Invitation, type Claim } from './handler.ts';
 
-const siteUrl = 'https://development.parasens-ambient-soundscape.pages.dev';
+const siteUrl = portalOrigin(key => Deno.env.get(key));
 const projectUrl = Deno.env.get('SUPABASE_URL')!;
 const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const resendKey = Deno.env.get('RESEND_API_KEY');
