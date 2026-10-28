@@ -1,4 +1,5 @@
 import { portalOrigin } from "../_shared/portal-origin.ts";
+import { serverFunctionHeaders } from "../_shared/server-auth.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.115.0";
 import { createAdminHandler, type MailJob } from "./handler.ts";
 const url = Deno.env.get("SUPABASE_URL")!;
@@ -60,8 +61,7 @@ Deno.serve(
         const response = await fetch(`${url}/functions/v1/portal-invitations`, {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${serviceKey}`,
-            apikey: serviceKey,
+            ...serverFunctionHeaders(key => Deno.env.get(key)),
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ action: "issue", email }),

@@ -3,6 +3,13 @@
 Status: integrated with the admin workspace and deployed to the development backend on 2026-09-27. No new emails sent; real receipt/redemption remains unverified. See [admin workspace setup](admin-workspace-setup.md).
 Supabase email OTP expiry must stay at 3600 seconds. Production is unchanged.
 
+Production update (2026-10-28): the separate production project now has this
+function, and one explicitly approved invitation was delivered. Issuing now
+supports the provisioned default project secret in `apikey`, retaining legacy
+service-role bearer compatibility. See [production backend setup](production-backend-setup.md)
+for deployment and verification; the development instructions below describe
+the earlier rollout. Production redemption and SMTP sign-in remain unverified.
+
 ## How it works
 
 A trusted operator issues an invitation through the `portal-invitations` Edge

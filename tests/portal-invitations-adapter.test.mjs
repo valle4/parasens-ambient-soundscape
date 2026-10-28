@@ -7,7 +7,8 @@ test('deployed adapter isolates server credentials and calls only the expected p
   const secret = 'TEST-SERVICE-KEY';
   const resend = 'TEST-RESEND-KEY';
   const project = 'https://test.supabase.co';
-  const env = { PORTAL_ORIGIN: 'https://parasens.com', SUPABASE_URL: project, SUPABASE_SERVICE_ROLE_KEY: secret, RESEND_API_KEY: resend };
+  const newSecret = 'sb_secret_adapter_test';
+  const env = { PORTAL_ORIGIN: 'https://parasens.com', SUPABASE_URL: project, SUPABASE_SERVICE_ROLE_KEY: secret, SUPABASE_SECRET_KEYS: JSON.stringify({default:newSecret}), RESEND_API_KEY: resend };
   const oldDeno = globalThis.Deno;
   const oldFetch = globalThis.fetch;
   let handler;
@@ -20,6 +21,7 @@ test('deployed adapter isolates server credentials and calls only the expected p
       assert.equal(headers.Authorization, `Bearer ${resend}`);
       assert.equal(headers['Idempotency-Key'], 'portal-invitation/11111111-1111-4111-8111-111111111111');
       assert.equal(JSON.stringify(options).includes(secret), false);
+      assert.equal(JSON.stringify(options).includes(newSecret), false);
       return Response.json({ id: 'receipt' });
     }
     assert.ok(url.startsWith(project + '/'));
@@ -60,4 +62,9 @@ test('deployed adapter isolates server credentials and calls only the expected p
   assert.equal(redeemed.status, 200);
   assert.deepEqual(await redeemed.json(), { token_hash: 'f'.repeat(56), type: 'email' });
   assert.equal(calls.filter(call => call.url === 'https://api.resend.com/emails').length, emailCount);
+  const currentRequest = new Request(project + '/functions/v1/portal-invitations', {
+    method:'POST', headers:{'Content-Type':'application/json',apikey:newSecret},
+    body:JSON.stringify({action:'issue',email:'approved@example.com'}),
+  });
+  assert.equal((await handler(currentRequest)).status,201);
 });

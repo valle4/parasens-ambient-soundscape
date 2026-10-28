@@ -84,9 +84,43 @@ ledger entry must be retained for idempotency. Replaying that request would
 not test a corrected key because it is already marked sent. No artist
 submission or account was created. Existing development keys were untouched.
 
-1. Portal invitation and SMTP sign-in delivery still need verification; form delivery and both function-key assignments are verified. The development fallback `RESEND_API_KEY 2` remains supported and untouched.
+1. SMTP sign-in delivery and full invitation redemption still need verification once the production website is connected. Form and portal-invitation delivery are verified. The development fallback `RESEND_API_KEY 2` remains supported and untouched.
 2. Connect Dropbox and configure workbook synchronisation using `docs/dropbox-and-excel-setup.md`.
 3. Import the intended music catalogue, excluding test submissions and accounts.
 4. Connect Cloudflare production variables to this project, then verify real sign-in, email, upload and catalogue flows before switching the public website.
 
 Dropbox credentials, catalogue import, Cloudflare switch and public launch remain outstanding.
+
+## Production invitation verification — 28 October 2026
+
+The owner explicitly approved one invitation to `hello@parasens.com`.
+The legacy-only issuer check rejected the production service-role credential
+through both the dashboard and a direct endpoint call. Those requests returned
+403 and sent no email. The exact cause of the legacy credential mismatch was
+not established; the current secret-key path was implemented and verified.
+
+`portal-invitations` now compares the `apikey` header with the provisioned
+`SUPABASE_SECRET_KEYS.default` value. `portal-admin` uses that same key for
+its internal invitation call. The existing legacy bearer comparison remains
+available for development. No JWT claims supplied by a caller are trusted,
+and public/ordinary user credentials cannot issue invitations. This follows
+Supabase's [current service-to-service guidance](https://supabase.com/docs/guides/functions/auth#service-to-service-calls).
+Only these two production functions were redeployed. Existing keys and user
+authorization policies were not changed.
+
+All 92 automated checks and backend TypeScript validation passed; scoped lint
+for the new authorization helper and invitation adapter passed. Hosted checks
+rejected unsigned issuance (403) and a forged API key (401). A request using
+the default project secret returned 201, with invitation
+`def3ff07-1094-4dc8-9f41-3a45345ef5cf`, status `sent`, and expiry
+31 October 2026 at 10:03 Europe/Stockholm (72 hours).
+
+Resend confirms [delivery](https://resend.com/emails/01a181bf-ddc8-764a-979c-7e01f8a34cac)
+from `PARASENS <portal@mail.parasens.com>` with subject
+`Your PARASENS artist portal invitation`. Its
+[request log](https://resend.com/logs/ef510d57-31d8-4df0-85f5-c6b2e9a86380)
+confirms the `PARASENS Production Portal` sending key. The link targets
+`https://parasens.com/portal/auth/confirm` with the one-time token in its
+fragment. The token was not redeemed or saved in repository files. No Auth
+user or submission was created by this test. The public website is still
+unchanged; full redemption is outstanding.

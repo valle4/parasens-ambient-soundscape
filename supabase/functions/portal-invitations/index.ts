@@ -1,5 +1,6 @@
 import { portalOrigin } from "../_shared/portal-origin.ts";
-import { createInvitationHandler, tokenDigest, type Invitation, type Claim } from './handler.ts';
+import { authorizeServer } from "../_shared/server-auth.ts";
+import { createInvitationHandler, type Invitation, type Claim } from './handler.ts';
 
 const siteUrl = portalOrigin(key => Deno.env.get(key));
 const projectUrl = Deno.env.get('SUPABASE_URL')!;
@@ -22,11 +23,7 @@ Deno.serve(createInvitationHandler({
   siteUrl,
   // Only a trusted operator/server may issue invitations. A publishable key,
   // artist session, or editable user_metadata never grants issuer privileges.
-  authorizeIssuer: async request => {
-    const value = request.headers.get('Authorization') || '';
-    if (!serviceKey || !value.startsWith('Bearer ')) return false;
-    return await tokenDigest(value.slice(7)) === await tokenDigest(serviceKey);
-  },
+  authorizeIssuer: request => authorizeServer(request, key => Deno.env.get(key)),
   issue: async (email, digest) => {
     if (!resendKey) throw new Error('Invitation sender not configured');
     const rows = await adminRequest('/rest/v1/rpc/issue_portal_invitation', { recipient: email, digest });
