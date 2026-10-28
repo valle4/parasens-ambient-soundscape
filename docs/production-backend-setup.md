@@ -85,11 +85,50 @@ not test a corrected key because it is already marked sent. No artist
 submission or account was created. Existing development keys were untouched.
 
 1. SMTP sign-in delivery and full invitation redemption still need verification once the production website is connected. Form and portal-invitation delivery are verified. The development fallback `RESEND_API_KEY 2` remains supported and untouched.
-2. Connect Dropbox and configure workbook synchronisation using `docs/dropbox-and-excel-setup.md`.
+2. Dropbox and workbook scheduling are configured. Complete signed-in portal upload and workbook acceptance checks when the production frontend is connected.
 3. Import the intended music catalogue, excluding test submissions and accounts.
 4. Connect Cloudflare production variables to this project, then verify real sign-in, email, upload and catalogue flows before switching the public website.
 
-Dropbox credentials, catalogue import, Cloudflare switch and public launch remain outstanding.
+Catalogue import, production frontend acceptance, Cloudflare switch and public launch remain outstanding.
+
+## Production Dropbox connection — 28 October 2026
+
+The owner created **Parasens Artist Portal Production**, app key
+`3q825v5f3j9nr7o`, with **App folder** access. Its folder is
+`/Apps/Parasens Artist Portal Production`. The existing development app
+`3v9em1zo7s561ef` was not changed.
+
+The production app's requested scopes are saved as `account_info.read`,
+`files.metadata.read`, `files.content.read`, and `files.content.write`.
+The owner approved the offline authorization flow. Its code was exchanged
+privately and a fresh access token was successfully obtained using the
+refresh token. Dropbox confirmed the intended account,
+`manne.skafvenstedt@gmail.com`, and the production app folder is empty.
+All four intended scopes were returned. No artist files were uploaded.
+
+The owner saved all six production settings: the three Dropbox credentials,
+account email, web root, and a dedicated workbook worker secret. Every saved
+SHA-256 fingerprint matched the intended value. The workbook endpoint and
+the same existing worker key are stored in Vault as `portal_workbook_url`
+and `portal_workbook_secret`. SQL verification confirmed both values without
+returning credentials.
+
+`supabase/operations/schedule-workbooks.sql` installed the once-per-minute
+`parasens-release-workbooks` job. The dashboard confirms its scheduled run
+at 10:34 Europe/Stockholm succeeded. A request from the database through `pg_net`
+returned HTTP 200 with `{"synced":0,"failed":0}`. A direct worker request
+also returned 200; using that key for `status` was rejected with
+`Worker action not allowed.` The `PORTAL_UPLOAD_PROVIDER=dropbox` setting
+was saved only after these checks and its fingerprint verified.
+
+A temporary 74-byte text file was uploaded to the production app folder,
+downloaded, compared byte for byte, and removed. This checks Dropbox's file
+API, not the signed-in portal workflow. Production still had zero releases,
+file records, and workbook jobs after verification. Full administrator
+`status`, artist upload/download, and workbook content checks await the
+connected production frontend. Development and public hosting were not
+changed. No credential values are stored in this repository.
+Temporary local credential files were removed after saved-value verification.
 
 ## Production invitation verification — 28 October 2026
 

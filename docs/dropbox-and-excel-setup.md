@@ -12,6 +12,20 @@ Local verification: all 78 automated checks passed, including the existing works
 
 Destination account requested by the owner: `manne.skafvenstedt@gmail.com`.
 
+## Separate production connection
+
+Configured on 2026-10-28 for Supabase `nfpqlhkgesolnjyvvhga` using the separate
+**Parasens Artist Portal Production** app and folder
+`/Apps/Parasens Artist Portal Production`. Its four scopes match those below.
+The owner approved Dropbox access and saved the credentials. Refresh-token,
+account, file upload/download, worker authorization, Vault values and a
+database-to-function request were verified. The minute schedule is active
+and `PORTAL_UPLOAD_PROVIDER=dropbox` is saved. No production artist releases
+or test submissions were created. See `docs/production-backend-setup.md` for
+evidence and remaining signed-in portal acceptance checks. The deployment
+instructions below describe the original development configuration; do not
+reuse its project URL or app folder for production.
+
 ## Behaviour
 
 - Admin Submissions has **Export this view** and **Export all submissions**. Individual releases have **Export release to Excel**. Exports include all matching submissions, independent of the 25-row UI page and Supabase's row limit, from one transactional snapshot.
