@@ -6,6 +6,7 @@ export type MailJob = {
 };
 export type AdminServices = {
   origin: string;
+  previewOrigin?: string;
   configured: boolean;
   authorize: (request: Request) => Promise<boolean>;
   invite: (email: string) => Promise<string>;
@@ -19,10 +20,12 @@ export type AdminServices = {
 };
 export function createAdminHandler(service: AdminServices) {
   return async (request: Request) => {
+    const requestOrigin = request.headers.get("Origin");
+    const allowedOrigin = requestOrigin && requestOrigin === service.previewOrigin ? requestOrigin : service.origin;
     const headers = {
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
-      "Access-Control-Allow-Origin": service.origin,
+      "Access-Control-Allow-Origin": allowedOrigin,
       "Access-Control-Allow-Headers":
         "authorization, apikey, content-type, x-client-info",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -31,8 +34,7 @@ export function createAdminHandler(service: AdminServices) {
     const reply = (status: number, body: unknown) =>
       new Response(JSON.stringify(body), { status, headers });
     if (
-      request.headers.get("Origin") &&
-      request.headers.get("Origin") !== service.origin
+      requestOrigin && requestOrigin !== allowedOrigin
     )
       return reply(403, { error: "Portal origin not allowed." });
     if (request.method === "OPTIONS")

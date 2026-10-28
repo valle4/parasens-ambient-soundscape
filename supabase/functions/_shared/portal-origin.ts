@@ -9,9 +9,14 @@ export function portalOrigin(env: Environment, override?: string): string {
     (env("SUPABASE_URL") === developmentProject ? developmentOrigin : "");
   if (!value) throw new Error("PORTAL_ORIGIN must be configured for this project");
   const parsed = new URL(value);
-  if (parsed.protocol !== "https:" || parsed.username || parsed.password ||
+  if (parsed.protocol !== "https:" || parsed.hostname.includes("*") || parsed.username || parsed.password ||
       parsed.search || parsed.hash || parsed.pathname !== "/") {
     throw new Error("Portal origin must be an HTTPS origin without a path");
   }
   return parsed.origin;
+}
+
+// Optional, exact launch-preview origin. Canonical email links keep PORTAL_ORIGIN.
+export function portalPreviewOrigin(env: Environment): string | undefined {
+  return env("PORTAL_PREVIEW_ORIGIN") ? portalOrigin(env, "PORTAL_PREVIEW_ORIGIN") : undefined;
 }

@@ -3,6 +3,7 @@ export type Invitation = { id: string; expires_at: string };
 export type Claim = { id: string; email: string };
 export type InvitationServices = {
   siteUrl: string;
+  previewOrigin?: string;
   authorizeIssuer: (request: Request) => Promise<boolean>;
   issue: (email: string, digest: string) => Promise<Invitation>;
   send: (email: string, link: string, id: string) => Promise<string>;
@@ -26,7 +27,8 @@ export function newInvitationToken(): string {
 export function createInvitationHandler(services: InvitationServices) {
   return async (request: Request): Promise<Response> => {
     const origin = request.headers.get('Origin');
-    const allowedOrigin = new URL(services.siteUrl).origin;
+    const canonicalOrigin = new URL(services.siteUrl).origin;
+    const allowedOrigin = origin && origin === services.previewOrigin ? origin : canonicalOrigin;
     const headers = {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-store',

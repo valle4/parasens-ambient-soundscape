@@ -1,4 +1,4 @@
-import { portalOrigin } from "../_shared/portal-origin.ts";
+import { portalOrigin, portalPreviewOrigin } from "../_shared/portal-origin.ts";
 import { serverFunctionHeaders } from "../_shared/server-auth.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.115.0";
 import { createAdminHandler, type MailJob } from "./handler.ts";
@@ -11,6 +11,7 @@ const service = createClient(url, serviceKey, {
 Deno.serve(
   createAdminHandler({
     origin: portalOrigin(key => Deno.env.get(key)),
+    previewOrigin: portalPreviewOrigin(key => Deno.env.get(key)),
     configured: Boolean(resend),
     authorize: async (request) => {
       const token = request.headers.get("Authorization");

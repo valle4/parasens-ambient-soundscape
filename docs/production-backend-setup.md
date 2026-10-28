@@ -1,6 +1,6 @@
 # Production backend
 
-Installed on 27 October 2026. This completes the database and server-function stage; the website is not yet connected to this backend.
+Installed on 27 October 2026. Production sign-in and administrator access were verified in a dedicated launch preview on 28 October; the public website switch is in progress.
 
 ## Project
 
@@ -12,7 +12,7 @@ Installed on 27 October 2026. This completes the database and server-function st
 
 ## Installed
 
-The application schema has 23 public tables, all with row-level security enabled, and a private `portal-releases` storage bucket. Ten migration versions are recorded. The historical `202609200002_music_seed.sql` is intentionally recorded as **omitted for production**: no historical tracks or categories were imported. This prevents a later migration push from silently adding the old catalogue. Import the approved catalogue separately.
+The application schema has 23 public tables, all with row-level security enabled, and a private `portal-releases` storage bucket. Ten migration versions are recorded. The historical `202609200002_music_seed.sql` is intentionally recorded as **omitted for production**: no historical tracks or categories were imported. This prevents a later migration push from silently adding the old catalogue. On 28 October the owner explicitly requested a clean start: do not copy any catalogue, submissions, or development accounts. Keep `hello@parasens.com` as owner.
 
 All five functions are deployed: `contact-form`, `portal-invitations`, `portal-admin`, `portal-files`, and `invite-music-admin`. They use their existing application-level session, role, token and request-validation checks; the legacy-secret-only gateway JWT check is off, matching `supabase/config.toml`.
 
@@ -44,7 +44,7 @@ Production SMTP is saved with sender `PARASENS <portal@mail.parasens.com>`,
 host `smtp.resend.com`, port `465`, and username `resend`. The owner created
 the `PARASENS Production Auth` key and entered it themselves. A full page
 reload confirmed SMTP enabled, a stored hidden password, and disabled Save.
-Delivery has not yet been tested.
+Delivery and sign-in were subsequently verified on 28 October (see Launch preview).
 
 After the owner signed in, Resend confirmed `mail.parasens.com` is verified
 and ready to send; tracking still offers setup rather than showing an active
@@ -55,7 +55,7 @@ Both repository email templates are installed in production. Magic Link uses
 subject `Your PARASENS sign-in link`; Invite User uses `Your PARASENS artist
 portal invitation`. Preview confirmed the intended content and token-fragment
 links. Magic Link was reopened to confirm persistence; Invite User showed a
-successful-save notice. SMTP sign-in delivery has not yet been tested.
+successful-save notice. SMTP sign-in delivery was subsequently verified on 28 October.
 
 Two additional key forms are prepared in Chrome, each restricted to sending
 from `mail.parasens.com`: `PARASENS Production Portal` and
@@ -84,12 +84,49 @@ ledger entry must be retained for idempotency. Replaying that request would
 not test a corrected key because it is already marked sent. No artist
 submission or account was created. Existing development keys were untouched.
 
-1. SMTP sign-in delivery and full invitation redemption still need verification once the production website is connected. Form and portal-invitation delivery are verified. The development fallback `RESEND_API_KEY 2` remains supported and untouched.
-2. Dropbox and workbook scheduling are configured. Complete signed-in portal upload and workbook acceptance checks when the production frontend is connected.
-3. Import the intended music catalogue, excluding test submissions and accounts.
-4. Connect Cloudflare production variables to this project, then verify real sign-in, email, upload and catalogue flows before switching the public website.
+1. SMTP delivery, invitation redemption, and normal sign-in are verified against production through the launch preview. Recheck the public hostname after the switch. The development fallback `RESEND_API_KEY 2` remains supported and untouched.
+2. Dropbox and workbook scheduling are configured. The owner explicitly waived further upload testing on 28 October because the upload workflow will change.
+3. Start with an empty music catalogue and no submissions, retaining the owner role for `hello@parasens.com`.
+4. Connect Cloudflare production variables to this project, then verify real sign-in, email and administrator access before switching the public website.
 
-Catalogue import, production frontend acceptance, Cloudflare switch and public launch remain outstanding.
+Production sign-in acceptance and the public website switch are in progress. No catalogue import is planned.
+
+## Launch preview — 28 October 2026
+
+Cloudflare production variables now point to this backend, with the live music
+library and Dropbox feature enabled and the existing public Spotify client ID.
+The live production deployment is still `8354e450-f100-446f-b237-c03bfef05c7a`.
+A separate `codex/production-ready` preview of commit `a240755` was built with
+the production variables: deployment `43b790d2-3f08-490a-b81f-dfc8a1d754fa`,
+at `https://codex-production-ready.parasens-ambient-soundscape.pages.dev`.
+Preview build variables were restored to development immediately afterward.
+
+Cloudflare's enabled single redirect `PARASENS www to canonical domain`
+matches only `https://www.parasens.com/*` and redirects permanently (301)
+to `https://parasens.com/${1}`, preserving query strings. A hosted request
+confirmed the sign-in callback path and query string are preserved. The
+previous production deployment remains available for rollback.
+
+The canonical `PORTAL_ORIGIN`, Auth Site URL, and database site origin remain
+`https://parasens.com`. Replacing the canonical origin for testing was rejected
+by automatic approval review and cancelled. The invitation and admin handlers
+instead support an optional, exact HTTPS `PORTAL_PREVIEW_ORIGIN`; no wildcard
+is permitted, canonical invitation links remain unchanged, and all issuer and
+user authorization checks remain in force. Only these two functions were
+redeployed. Tests confirm canonical/preview access and rejection of unrelated
+origins; TypeScript and scoped lint passed. A matching exact Auth callback
+was temporarily added for the preview sign-in test.
+
+The existing invitation was redeemed successfully from this preview. The
+owner reached Administration, Accounts lists `hello@parasens.com` as an
+administrator, and Submissions shows zero releases. The homepage shows an
+empty catalogue. A normal sign-in request sent one email to the owner through
+production SMTP; [Resend confirms delivery](https://resend.com/emails/01a181ef-c8ca-7ee9-af3f-4fda4e56584e).
+The email correctly targets the canonical `parasens.com` confirmation page.
+For prelaunch verification its one-time token was used on the controlled
+preview with the same production backend; confirmation succeeded and returned
+to Administration. No token was saved in source or logs. Remove the temporary
+preview allowance and callback after the production switch.
 
 ## Production Dropbox connection — 28 October 2026
 

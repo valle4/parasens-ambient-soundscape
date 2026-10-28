@@ -1,4 +1,4 @@
-import { portalOrigin } from "../_shared/portal-origin.ts";
+import { portalOrigin, portalPreviewOrigin } from "../_shared/portal-origin.ts";
 import { authorizeServer } from "../_shared/server-auth.ts";
 import { createInvitationHandler, type Invitation, type Claim } from './handler.ts';
 
@@ -21,6 +21,7 @@ async function adminRequest(path: string, body: unknown, method = 'POST') {
 
 Deno.serve(createInvitationHandler({
   siteUrl,
+  previewOrigin: portalPreviewOrigin(key => Deno.env.get(key)),
   // Only a trusted operator/server may issue invitations. A publishable key,
   // artist session, or editable user_metadata never grants issuer privileges.
   authorizeIssuer: request => authorizeServer(request, key => Deno.env.get(key)),
