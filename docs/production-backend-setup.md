@@ -89,7 +89,7 @@ submission or account was created. Existing development keys were untouched.
 3. Start with an empty music catalogue and no submissions, retaining the owner role for `hello@parasens.com`.
 4. Cloudflare production variables are connected to this project. Sign-in, email and administrator access were verified before launch; the public hostname is checked again after the switch.
 
-Production sign-in acceptance and the public website switch are complete. No catalogue import is planned.
+Production sign-in acceptance and the public website switch are complete. The website initially launched empty; the owner subsequently requested the curated catalogue transfer described below.
 
 ## Launch preview — 28 October 2026
 
@@ -224,3 +224,30 @@ Frontend TypeScript and production build checks passed. The 22 focused
 backend/authentication tests passed, including exact-origin restrictions,
 canonical email links, server authorization, and production setup. No upload
 testing or catalogue import was performed during launch acceptance.
+
+## Curated catalogue transfer — 28 October 2026
+
+After launch, the owner explicitly requested the music from the old website
+and **all catalogue work in progress**, including saved genre assignments.
+This supersedes the earlier empty-catalogue preference for music only.
+
+The source was the current development database `zsjcelwhipbwrwdzegdl`, not
+the historical seed file. A single read-only export captured all six music
+tables. Production received 229 tracks (147 published, 73 drafts, 9 archived),
+49 categories, 223 category assignments, 440 ordering records, one imported
+playlist and its 116 track links. Original identifiers, metadata, timestamps,
+statuses, category hierarchy and ordering were preserved exactly.
+
+The import was first checked in a local database. A transaction rejected any
+nonempty destination table, inserted parent categories before children, and
+compared every imported row with the typed source records before committing.
+A repeat import was verified to reject safely. Production returned the
+expected counts for all six tables. No account, role, submission, file, or
+backend configuration was copied or changed.
+
+Public API verification matched all 147 published tracks, 49 categories,
+147 visible category assignments and 440 ordering records exactly against the
+source export. Drafts and archived tracks remain private. Chrome confirmed
+the public Listen section displays the music and mood filters, and the
+administrator music manager shows all three original status counts. The
+source database remains intact; no frontend deployment was required.
