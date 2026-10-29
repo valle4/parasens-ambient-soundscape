@@ -167,11 +167,7 @@ const MusicPlayer = () => {
           ) : (
             <div
               key={selectedGenre}
-              className={`genre-view grid items-start gap-3 md:grid-cols-[7rem_minmax(0,1fr)_7rem] ${
-                availableSubCategories.length > 0
-                  ? "grid-cols-[4rem_minmax(0,1fr)]"
-                  : "grid-cols-[4rem_minmax(0,1fr)_4rem]"
-              }`}
+              className="genre-view grid grid-cols-1 gap-3"
             >
               <button
                 ref={backButtonRef}
@@ -181,11 +177,10 @@ const MusicPlayer = () => {
                   shouldFocusPicker.current = true;
                   setGenrePickerOpen(true);
                 }}
-                className="genre-back inline-flex min-h-11 items-center gap-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="genre-back inline-flex min-h-11 items-center gap-2 justify-self-center whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                <span className="md:hidden">Back</span>
-                <span className="hidden md:inline">All genres</span>
+                All genres
               </button>
               <div
                 role="group"
