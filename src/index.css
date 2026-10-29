@@ -222,6 +222,7 @@
 
   .genre-button:focus-visible,
   .genre-back:focus-visible,
+  .genre-parent:focus-visible,
   .subgenre-list button:focus-visible {
     outline: 2px solid hsl(var(--foreground));
     outline-offset: 3px;
