@@ -117,6 +117,7 @@ const MusicPlayer = () => {
   };
 
   const handleSubCategorySelect = (sub: string | null) => {
+    if (sub === selectedSubCategory) return;
     setSelectedSubCategory(sub);
     setExpandedTrackId(null);
   };
@@ -164,59 +165,64 @@ const MusicPlayer = () => {
               ))}
             </div>
           ) : (
-            <div key={selectedGenre} className="genre-view text-center">
-              <div className="mb-4 grid grid-cols-[4rem_minmax(0,1fr)_4rem] items-center gap-2 md:grid-cols-[8rem_minmax(0,1fr)_8rem]">
+            <div
+              key={selectedGenre}
+              className={`genre-view grid items-start gap-3 md:grid-cols-[7rem_minmax(0,1fr)_7rem] ${
+                availableSubCategories.length > 0
+                  ? "grid-cols-[4rem_minmax(0,1fr)]"
+                  : "grid-cols-[4rem_minmax(0,1fr)_4rem]"
+              }`}
+            >
+              <button
+                ref={backButtonRef}
+                type="button"
+                aria-label="Back to all genres"
+                onClick={() => {
+                  shouldFocusPicker.current = true;
+                  setGenrePickerOpen(true);
+                }}
+                className="genre-back inline-flex min-h-11 items-center gap-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                <span className="md:hidden">Back</span>
+                <span className="hidden md:inline">All genres</span>
+              </button>
+              <div
+                role="group"
+                aria-label="Genre filters"
+                className={`subgenre-list min-w-0 flex gap-2 md:flex-wrap md:justify-center ${
+                  availableSubCategories.length > 0 ? "subgenre-list-scroll" : "justify-center"
+                }`}
+              >
                 <button
-                  ref={backButtonRef}
                   type="button"
-                  aria-label="Back to all genres"
-                  onClick={() => {
-                    shouldFocusPicker.current = true;
-                    setGenrePickerOpen(true);
-                  }}
-                  className="genre-back inline-flex min-h-11 items-center gap-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  aria-pressed={selectedSubCategory === null}
+                  onClick={() => handleSubCategorySelect(null)}
+                  className={`text-xs px-3 py-1.5 rounded-full transition-all duration-200 ${
+                    selectedSubCategory === null
+                      ? "bg-foreground/10 text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                  <span className="md:hidden">Back</span>
-                  <span className="hidden md:inline">All genres</span>
-                </button>
-                <h3 className="break-words font-display text-lg md:text-2xl font-medium tracking-tight">
+                  {availableSubCategories.length > 0 ? "All " : ""}
                   {genres.find((genre) => genre.id === selectedGenre)?.name}
-                </h3>
-              </div>
-
-              {/* Sub-Category Selector - Only show when a genre is selected */}
-              {availableSubCategories.length > 0 && (
-                <div role="group" aria-label="Subgenres" className="subgenre-list flex gap-2 md:flex-wrap md:justify-center">
+                </button>
+                {availableSubCategories.map((sub) => (
                   <button
+                    key={sub.id}
                     type="button"
-                    aria-pressed={selectedSubCategory === null}
-                    onClick={() => handleSubCategorySelect(null)}
+                    aria-pressed={selectedSubCategory === sub.id}
+                    onClick={() => handleSubCategorySelect(sub.id)}
                     className={`text-xs px-3 py-1.5 rounded-full transition-all duration-200 ${
-                      selectedSubCategory === null
+                      selectedSubCategory === sub.id
                         ? "bg-foreground/10 text-foreground"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    All {genres.find((genre) => genre.id === selectedGenre)?.name}
+                    {sub.name}
                   </button>
-                  {availableSubCategories.map((sub) => (
-                    <button
-                      key={sub.id}
-                      type="button"
-                      aria-pressed={selectedSubCategory === sub.id}
-                      onClick={() => handleSubCategorySelect(sub.id)}
-                      className={`text-xs px-3 py-1.5 rounded-full transition-all duration-200 ${
-                        selectedSubCategory === sub.id
-                          ? "bg-foreground/10 text-foreground"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {sub.name}
-                    </button>
-                  ))}
-                </div>
-              )}
+                ))}
+              </div>
             </div>
           )}
         </div>

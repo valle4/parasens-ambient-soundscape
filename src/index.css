@@ -242,7 +242,7 @@
   }
 
   @media (max-width: 767px) {
-    .subgenre-list {
+    .subgenre-list-scroll {
       margin-right: -24px;
       padding-right: 28px;
       mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
