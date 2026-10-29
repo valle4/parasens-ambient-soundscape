@@ -380,7 +380,7 @@ export default function PortalMusicLibrary() {
         )}
         {tab === "import" && <PlaylistImports onChange={refresh} />}
         {tab === "categories" && data && (
-          <CategoryManager categories={data.categories} onChange={refresh} />
+          <CategoryManager categories={data.categories} tags={data.tags} onChange={refresh} />
         )}
 
         {tab === "library" && data && (
