@@ -195,7 +195,7 @@ const MusicPlayer = () => {
         {/* Track List */}
         <div
           ref={tracksRef}
-          className={`max-h-[500px] overflow-y-auto scroll-reveal scroll-reveal-delay-2 ${tracksRevealed ? "revealed" : ""}`}
+          className={`max-h-[500px] overflow-y-auto overflow-x-hidden scroll-reveal scroll-reveal-delay-2 ${tracksRevealed ? "revealed" : ""}`}
         >
           <div className="space-y-1">
             {filteredTracks.map((track, index) => (
