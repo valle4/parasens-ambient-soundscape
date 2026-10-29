@@ -180,7 +180,7 @@ const MusicPlayer = () => {
                   <span className="md:hidden">Back</span>
                   <span className="hidden md:inline">All genres</span>
                 </button>
-                <h3 className="break-words font-display text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight">
+                <h3 className="break-words font-display text-lg md:text-2xl font-medium tracking-tight">
                   {genres.find((genre) => genre.id === selectedGenre)?.name}
                 </h3>
               </div>
