@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Play, ChevronUp } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Play, ChevronUp, ArrowLeft } from "lucide-react";
 import useScrollReveal from "@/hooks/useScrollReveal";
 import SpotifyTrackPreview from "@/components/music/SpotifyTrackPreview";
 import { loadSpotifyEmbedApi } from "@/lib/music/spotify-embed";
@@ -17,6 +17,10 @@ const liveLibrary = import.meta.env.VITE_MUSIC_LIBRARY_ENABLED === "true";
 
 const MusicPlayer = () => {
   const [selectedGenre, setSelectedGenre] = useState("All");
+  const [genrePickerOpen, setGenrePickerOpen] = useState(true);
+  const backButtonRef = useRef<HTMLButtonElement>(null);
+  const selectedGenreRef = useRef<HTMLButtonElement>(null);
+  const shouldFocusPicker = useRef(false);
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(
     null,
   );
@@ -31,6 +35,16 @@ const MusicPlayer = () => {
   const { ref: headerRef, isRevealed: headerRevealed } = useScrollReveal();
   const { ref: genreRef, isRevealed: genreRevealed } = useScrollReveal();
   const { ref: tracksRef, isRevealed: tracksRevealed } = useScrollReveal();
+
+  useEffect(() => {
+    if (!shouldFocusPicker.current) return;
+    shouldFocusPicker.current = false;
+    const button = genrePickerOpen ? selectedGenreRef.current : backButtonRef.current;
+    button?.focus({ preventScroll: true });
+    if (genreRef.current && genreRef.current.getBoundingClientRect().top < 96) {
+      genreRef.current.scrollIntoView({ block: "start" });
+    }
+  }, [genrePickerOpen, genreRef]);
 
   const catalogue = useQuery({
     queryKey: ["public-music"],
@@ -92,6 +106,11 @@ const MusicPlayer = () => {
   );
 
   const handleGenreSelect = (genre: string) => {
+    if (genre !== "All") {
+      shouldFocusPicker.current = true;
+      setGenrePickerOpen(false);
+    }
+    if (genre === selectedGenre) return;
     setSelectedGenre(genre);
     setSelectedSubCategory(null);
     setExpandedTrackId(null);
@@ -119,7 +138,7 @@ const MusicPlayer = () => {
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-4">
             Listen
           </h2>
-          <p className="text-muted-foreground text-lg mb-12 md:mb-16">
+          <p className="text-muted-foreground text-lg mb-8 md:mb-10">
             Select a mood. Press play.
           </p>
         </div>
@@ -127,52 +146,76 @@ const MusicPlayer = () => {
         {/* Genre Selector */}
         <div
           ref={genreRef}
-          className={`flex flex-wrap justify-center gap-2 md:gap-4 mb-6 scroll-reveal scroll-reveal-delay-1 ${genreRevealed ? "revealed" : ""}`}
+          className={`mb-8 md:mb-10 scroll-mt-28 scroll-reveal scroll-reveal-delay-1 ${genreRevealed ? "revealed" : ""}`}
         >
-          {genres.map((genre) => (
-            <button
-              key={genre.id}
-              onClick={() => handleGenreSelect(genre.id)}
-              className={`genre-button ${selectedGenre === genre.id ? "genre-button-active" : "genre-button-inactive"}`}
-            >
-              {genre.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Sub-Category Selector - Only show when a genre is selected */}
-        {availableSubCategories.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-2 mb-12 md:mb-16">
-            <button
-              onClick={() => handleSubCategorySelect(null)}
-              className={`text-xs px-3 py-1.5 rounded-full transition-all duration-200 ${
-                selectedSubCategory === null
-                  ? "bg-foreground/10 text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              All {genres.find((genre) => genre.id === selectedGenre)?.name}
-            </button>
-            {availableSubCategories.map((sub) => (
+          {genrePickerOpen ? (
+            <div key="genres" role="group" aria-label="Genres" className="genre-view flex flex-wrap justify-center gap-2 md:gap-4">
+              {genres.map((genre) => (
+                <button
+                  key={genre.id}
+                  type="button"
+                  ref={selectedGenre === genre.id ? selectedGenreRef : undefined}
+                  aria-pressed={selectedGenre === genre.id}
+                  onClick={() => handleGenreSelect(genre.id)}
+                  className={`genre-button ${selectedGenre === genre.id ? "genre-button-active" : "genre-button-inactive"}`}
+                >
+                  {genre.name}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div key={selectedGenre} className="genre-view">
               <button
-                key={sub.id}
-                onClick={() => handleSubCategorySelect(sub.id)}
-                className={`text-xs px-3 py-1.5 rounded-full transition-all duration-200 ${
-                  selectedSubCategory === sub.id
-                    ? "bg-foreground/10 text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                ref={backButtonRef}
+                type="button"
+                onClick={() => {
+                  shouldFocusPicker.current = true;
+                  setGenrePickerOpen(true);
+                }}
+                className="genre-back inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                {sub.name}
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                All genres
               </button>
-            ))}
-          </div>
-        )}
+              <h3 className="mt-3 mb-4 font-display text-2xl md:text-3xl font-semibold tracking-tight">
+                {genres.find((genre) => genre.id === selectedGenre)?.name}
+              </h3>
 
-        {/* Spacer when no sub-categories */}
-        {availableSubCategories.length === 0 && (
-          <div className="mb-6 md:mb-10" />
-        )}
+              {/* Sub-Category Selector - Only show when a genre is selected */}
+              {availableSubCategories.length > 0 && (
+                <div role="group" aria-label="Subgenres" className="subgenre-list flex gap-2 md:flex-wrap">
+                  <button
+                    type="button"
+                    aria-pressed={selectedSubCategory === null}
+                    onClick={() => handleSubCategorySelect(null)}
+                    className={`text-xs px-3 py-1.5 rounded-full transition-all duration-200 ${
+                      selectedSubCategory === null
+                        ? "bg-foreground/10 text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    All {genres.find((genre) => genre.id === selectedGenre)?.name}
+                  </button>
+                  {availableSubCategories.map((sub) => (
+                    <button
+                      key={sub.id}
+                      type="button"
+                      aria-pressed={selectedSubCategory === sub.id}
+                      onClick={() => handleSubCategorySelect(sub.id)}
+                      className={`text-xs px-3 py-1.5 rounded-full transition-all duration-200 ${
+                        selectedSubCategory === sub.id
+                          ? "bg-foreground/10 text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {sub.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {liveLibrary && catalogue.isPending && (
           <p role="status" className="py-8 text-center text-muted-foreground">

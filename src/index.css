@@ -216,6 +216,39 @@
     @apply text-muted-foreground hover:text-foreground hover:border-border;
   }
 
+  .genre-view {
+    animation: genre-fade-in 180ms ease-out;
+  }
+
+  .genre-button:focus-visible,
+  .genre-back:focus-visible,
+  .subgenre-list button:focus-visible {
+    outline: 2px solid hsl(var(--foreground));
+    outline-offset: 3px;
+  }
+
+  .subgenre-list {
+    overflow-x: auto;
+    padding: 4px;
+    margin: -4px;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--foreground) / .2) transparent;
+  }
+
+  .subgenre-list button {
+    flex-shrink: 0;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 767px) {
+    .subgenre-list {
+      margin-right: -24px;
+      padding-right: 28px;
+      mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
+    }
+  }
+
   .input-minimal {
     @apply bg-transparent border-b border-border focus:border-foreground outline-none py-3 w-full transition-colors duration-300 placeholder:text-muted-foreground;
   }
@@ -523,6 +556,11 @@
 .public-track {
   content-visibility: auto;
   contain-intrinsic-size: auto 81px;
+}
+
+@keyframes genre-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
