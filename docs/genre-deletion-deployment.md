@@ -4,7 +4,9 @@ Backend installed on development and production on 29 October 2026. Both SQL
 results confirmed `music_delete_category(uuid)` exists, anonymous execute is
 denied, and authenticated execute is granted. Migration `202610290001` was
 recorded in the same transaction. No existing catalogue rows were deleted.
-Frontend publication and browser verification are in progress.
+Frontend commit `2f578cb` is live on `https://parasens.com`, deployed successfully
+by Cloudflare at 10:52 Europe/Stockholm on 29 October 2026. Production deployment:
+`94f4d9d6-7990-4ded-8696-8ff2451d1617`.
 
 Website Music → Genres now offers deletion when a selected genre or subgenre
 has no songs or children. The confirmation uses its saved name. Song usage
@@ -14,7 +16,13 @@ category's saved ordering. No existing catalogue data was changed during develop
 
 Validation passed: focused database deletion/access/preservation tests, existing
 genre-edit tests, fresh production setup tests (4 tests total), application
-TypeScript, scoped lint, and production build. Browser verification is pending.
+TypeScript, scoped lint, and production build. Live browser checks confirmed the
+new button and protection messages: Piano requires moving/deleting its five
+subgenres; Peaceful Piano requires removing its 15 song assignments first.
+The catalogue still shows 520 drafts, 220 published songs and 9 archived songs,
+matching the predeployment UI. A read-only database query found no empty leaf
+genres, so the confirmation dialog was not exercised on production. No real
+genre was created or deleted for verification.
 
 Deployment procedure:
 
@@ -25,8 +33,8 @@ Deployment procedure:
 2. Verify the function exists, anonymous execute is denied, and authenticated
    execute is granted (the function checks the existing music administrator role).
 3. Publish the frontend only after both backends have the function installed.
-4. Verify the disabled state for a used genre and open/cancel the confirmation
-   for an empty genre. Do not delete a real genre as a test.
+4. Verify the disabled state for a used genre. If an empty genre is available,
+   open/cancel its confirmation. Do not delete a real genre as a test.
 
 A transaction-wrapped dashboard script is prepared locally at
 `/private/tmp/parasens-install-genre-deletion.sql`; it installs the function and
