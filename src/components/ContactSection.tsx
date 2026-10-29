@@ -3,6 +3,7 @@ import useScrollReveal from "@/hooks/useScrollReveal";
 import { ArrowLeft } from "lucide-react";
 
 import { submitContact } from "@/lib/contact";
+import { trackSuccessfulSubmission } from "@/lib/analytics";
 
 type ActiveView = "selection" | "message" | "music";
 
@@ -38,6 +39,7 @@ const ContactSection = () => {
     if (attempt.current?.payload !== payload) attempt.current = { payload, id: crypto.randomUUID() };
     try {
       await submitContact({ ...data, website, requestId: attempt.current.id });
+      trackSuccessfulSubmission(data.kind, attempt.current.id);
       attempt.current = null;
       return true;
     } catch (problem) {

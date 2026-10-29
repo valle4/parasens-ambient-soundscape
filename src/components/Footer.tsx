@@ -18,6 +18,13 @@ const Footer = () => {
         </p>
 
         <div className="flex items-center gap-6">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("parasens:analytics-settings"))}
+            className="text-muted-foreground hover:text-foreground transition-colors duration-300 text-xs tracking-wider"
+          >
+            Analytics settings
+          </button>
           <a
             href="#"
             className="text-muted-foreground hover:text-foreground transition-colors duration-300 text-xs tracking-wider"
