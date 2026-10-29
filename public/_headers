@@ -1,0 +1,7 @@
+# Portal routes are served by Pages static routing, not the homepage Function.
+# Allow crawling so search engines can read this noindex instruction.
+/portal
+  X-Robots-Tag: noindex
+
+/portal/*
+  X-Robots-Tag: noindex

@@ -40,3 +40,15 @@ and `npm run build` as well. In Chrome, verify hydrated filtering, subgenres,
 player opening and absence of hydration errors. Inspect the raw homepage response
 for `X-Public-Render: server`, populated `.public-track` rows, and the
 `public-page-data` element; browser-rendered content alone is not an SSR check.
+
+## Search discovery
+
+`public/sitemap.xml` lists the canonical homepage, currently the only public
+content URL. Add future public genre/business pages when they exist; do not add
+portal URLs or homepage fragments. `robots.txt` advertises the sitemap.
+
+Cloudflare Pages applies `public/_headers` to `/portal` and `/portal/*`, sending
+`X-Robots-Tag: noindex` for login, callbacks and internal portal pages. These paths
+remain crawlable so search engines can see the instruction. Authentication is
+unchanged. Keep these paths outside the homepage Function routing; if portal
+responses later move into a Function, that Function must set the same header.
