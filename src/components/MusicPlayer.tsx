@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
-import { Play, ChevronUp, MousePointerClick } from "lucide-react";
+import { Play, ChevronUp } from "lucide-react";
 import useScrollReveal from "@/hooks/useScrollReveal";
+import SpotifyTrackPreview from "@/components/music/SpotifyTrackPreview";
+import { loadSpotifyEmbedApi } from "@/lib/music/spotify-embed";
 
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -99,7 +101,12 @@ const MusicPlayer = () => {
   };
 
   return (
-    <section id="music" className="min-h-screen section-padding bg-card">
+    <section
+      id="music"
+      className="min-h-screen section-padding bg-card"
+      onPointerEnter={() => void loadSpotifyEmbedApi().catch(() => {})}
+      onFocusCapture={() => void loadSpotifyEmbedApi().catch(() => {})}
+    >
       <div className="max-w-5xl mx-auto">
         <div
           ref={headerRef}
@@ -229,19 +236,10 @@ const MusicPlayer = () => {
                 {/* Expandable Spotify Player */}
                 {expandedTrackId === track.id && (
                   <div className="px-4 pb-4 animate-accordion-down overflow-hidden">
-                    <div className="flex items-center justify-center gap-2 mb-3 text-muted-foreground">
-                      <MousePointerClick className="w-4 h-4 animate-pulse" />
-                      <span className="text-sm">Click the player to start</span>
-                    </div>
-                    <iframe
+                    <SpotifyTrackPreview
+                      key={track.id}
+                      id={track.spotifyId}
                       title={`Listen to ${track.title} by ${track.artist}`}
-                      src={`https://open.spotify.com/embed/track/${track.spotifyId}?utm_source=generator&theme=0`}
-                      width="100%"
-                      height="152"
-                      frameBorder="0"
-                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                      loading="eager"
-                      className="rounded-xl"
                     />
                   </div>
                 )}
