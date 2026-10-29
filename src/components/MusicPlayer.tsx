@@ -164,7 +164,7 @@ const MusicPlayer = () => {
               ))}
             </div>
           ) : (
-            <div key={selectedGenre} className="genre-view">
+            <div key={selectedGenre} className="genre-view text-center">
               <button
                 ref={backButtonRef}
                 type="button"
@@ -183,7 +183,7 @@ const MusicPlayer = () => {
 
               {/* Sub-Category Selector - Only show when a genre is selected */}
               {availableSubCategories.length > 0 && (
-                <div role="group" aria-label="Subgenres" className="subgenre-list flex gap-2 md:flex-wrap">
+                <div role="group" aria-label="Subgenres" className="subgenre-list flex gap-2 md:flex-wrap md:justify-center">
                   <button
                     type="button"
                     aria-pressed={selectedSubCategory === null}
