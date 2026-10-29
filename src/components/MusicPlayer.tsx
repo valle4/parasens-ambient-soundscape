@@ -8,7 +8,7 @@ import {
   legacyGenres,
   legacySubCategories,
 } from "@/data/legacy-music";
-import { loadCatalogue } from "@/lib/music/api";
+import { loadPublicCatalogue } from "@/lib/music/public-catalogue";
 import { tracksInScope } from "@/lib/music/catalogue";
 
 const liveLibrary = import.meta.env.VITE_MUSIC_LIBRARY_ENABLED === "true";
@@ -26,7 +26,7 @@ const MusicPlayer = () => {
 
   const catalogue = useQuery({
     queryKey: ["public-music"],
-    queryFn: () => loadCatalogue(true),
+    queryFn: loadPublicCatalogue,
     enabled: liveLibrary,
     staleTime: 30_000,
   });
