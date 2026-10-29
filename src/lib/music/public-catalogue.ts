@@ -1,4 +1,5 @@
 import type { Catalogue, Category, MusicTrack, TrackOrder, TrackTag } from "./catalogue";
+import { sortCategories } from "./catalogue.ts";
 
 // This reader deliberately never uses the signed-in portal client. Both SSR and
 // the public player see exactly what an anonymous visitor is allowed to read.
@@ -39,7 +40,7 @@ export async function fetchPublicCatalogue(
   const ids = new Set(published.map((track) => track.id));
   return {
     tracks: published,
-    categories: categories.sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, "en")),
+    categories: sortCategories(categories),
     tags: tags.filter((tag) => ids.has(tag.track_id)),
     orders: orders.filter((order) => ids.has(order.track_id)),
   };

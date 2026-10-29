@@ -97,6 +97,22 @@ export function categoryLabel(
   return parent ? `${parent.name} → ${category.name}` : category.name;
 }
 
+// Keep each parent's children together, with alphabetical ordering at both levels.
+export function sortCategories(categories: Category[]): Category[] {
+  const byId = new Map(categories.map((category) => [category.id, category]));
+  const compare = new Intl.Collator("en", { sensitivity: "base", numeric: true }).compare;
+  return [...categories].sort((a, b) => {
+    const aParent = a.parent_id ? byId.get(a.parent_id) : undefined;
+    const bParent = b.parent_id ? byId.get(b.parent_id) : undefined;
+    return (
+      compare(aParent?.name ?? a.name, bParent?.name ?? b.name) ||
+      Number(!!aParent) - Number(!!bParent) ||
+      compare(a.name, b.name) ||
+      compare(a.id, b.id)
+    );
+  });
+}
+
 export function tracksInScope(
   data: Catalogue,
   scope: string,

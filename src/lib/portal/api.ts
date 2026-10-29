@@ -1,5 +1,5 @@
 import { musicClient, musicRpc } from "@/lib/music/api";
-import type { Category } from "@/lib/music/catalogue";
+import { sortCategories, type Category } from "@/lib/music/catalogue";
 import { dropboxUploadsEnabled, portalFiles, syncReleaseWorkbook } from "./files";
 export type ReleaseStatus =
   | "draft"
@@ -136,7 +136,7 @@ export async function artistDirectory() {
   return {
     artists: artists.sort((a, b) => a.name.localeCompare(b.name)),
     labels,
-    genres,
+    genres: sortCategories(genres),
     links,
   };
 }

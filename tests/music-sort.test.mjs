@@ -1,6 +1,28 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { sortTracks, tracksInScope } from "../src/lib/music/catalogue.ts";
+import { sortCategories, sortTracks, tracksInScope } from "../src/lib/music/catalogue.ts";
+
+test("genre lists alphabetize parents and children together regardless of saved positions", () => {
+  const genres = [
+    { id: "p", name: "Piano", parent_id: null, position: 0 },
+    { id: "p-soft", name: "Soft", parent_id: "p", position: 1 },
+    { id: "p-cover", name: "Piano Cover", parent_id: "p", position: 2 },
+    { id: "j-solo", name: "Solo Piano", parent_id: "j", position: 3 },
+    { id: "j", name: "Jazz", parent_id: null, position: 4 },
+    { id: "a", name: "ambient", parent_id: null, position: 5 },
+    { id: "j-bossa", name: "Bossa Nova", parent_id: "j", position: 6 },
+    { id: "a-sleep", name: "Sleep", parent_id: "a", position: 7 },
+  ];
+  const original = structuredClone(genres);
+  assert.deepEqual(sortCategories(genres).map(c => c.id), [
+    "a", "a-sleep", "j", "j-bossa", "j-solo", "p", "p-cover", "p-soft",
+  ]);
+  assert.deepEqual(genres, original);
+  genres.push({ id: "p-new", name: "Peaceful Piano", parent_id: "p", position: 100 });
+  assert.deepEqual(sortCategories(genres).filter(c => c.parent_id === "p").map(c => c.name), [
+    "Peaceful Piano", "Piano Cover", "Soft",
+  ]);
+});
 
 const tracks = [
   { id: "a", title: "Zebra", artist: "Alpha" },

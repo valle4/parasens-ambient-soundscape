@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { sortCategories } from "./catalogue";
 import type {
   Catalogue,
   Category,
@@ -47,9 +48,7 @@ export async function loadCatalogue(publicOnly = false): Promise<Catalogue> {
   ]);
   return {
     tracks,
-    categories: categories.sort(
-      (a, b) => a.position - b.position || a.name.localeCompare(b.name),
-    ),
+    categories: sortCategories(categories),
     tags,
     orders,
   };
