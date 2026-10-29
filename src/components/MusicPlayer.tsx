@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Play, ChevronUp } from "lucide-react";
 import useScrollReveal from "@/hooks/useScrollReveal";
 import SpotifyTrackPreview from "@/components/music/SpotifyTrackPreview";
@@ -21,6 +21,12 @@ const MusicPlayer = () => {
     null,
   );
   const [expandedTrackId, setExpandedTrackId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Prepare Spotify's controls before the first click. No track is loaded
+    // and no playback is requested until the listener opens a row.
+    void loadSpotifyEmbedApi().catch(() => {});
+  }, []);
 
   const { ref: headerRef, isRevealed: headerRevealed } = useScrollReveal();
   const { ref: genreRef, isRevealed: genreRevealed } = useScrollReveal();
@@ -104,8 +110,6 @@ const MusicPlayer = () => {
     <section
       id="music"
       className="min-h-screen section-padding bg-card"
-      onPointerEnter={() => void loadSpotifyEmbedApi().catch(() => {})}
-      onFocusCapture={() => void loadSpotifyEmbedApi().catch(() => {})}
     >
       <div className="max-w-5xl mx-auto">
         <div
@@ -198,6 +202,11 @@ const MusicPlayer = () => {
               <div
                 key={track.id}
                 className="public-track border-b border-border/50 last:border-b-0"
+                style={
+                  expandedTrackId === track.id
+                    ? { contentVisibility: "visible" }
+                    : undefined
+                }
               >
                 {/* Track Row */}
                 <button

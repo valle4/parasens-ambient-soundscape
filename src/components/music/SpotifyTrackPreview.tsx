@@ -53,7 +53,13 @@ export default function SpotifyTrackPreview({
               return;
             }
             controller = created;
-            host.querySelector("iframe")?.setAttribute("title", title);
+            const iframe = host.querySelector("iframe");
+            if (iframe) {
+              iframe.title = title;
+              // Spotify defaults to lazy loading. This player is opened by a
+              // click inside an animated, scrollable list and should load now.
+              iframe.loading = "eager";
+            }
             created.addListener("ready", () => {
               if (disposed) return;
               clearTimeout(readyTimer);
