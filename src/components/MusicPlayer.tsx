@@ -165,21 +165,25 @@ const MusicPlayer = () => {
             </div>
           ) : (
             <div key={selectedGenre} className="genre-view text-center">
-              <button
-                ref={backButtonRef}
-                type="button"
-                onClick={() => {
-                  shouldFocusPicker.current = true;
-                  setGenrePickerOpen(true);
-                }}
-                className="genre-back inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                All genres
-              </button>
-              <h3 className="mt-3 mb-4 font-display text-2xl md:text-3xl font-semibold tracking-tight">
-                {genres.find((genre) => genre.id === selectedGenre)?.name}
-              </h3>
+              <div className="mb-4 grid grid-cols-[4rem_minmax(0,1fr)_4rem] items-center gap-2 md:grid-cols-[8rem_minmax(0,1fr)_8rem]">
+                <button
+                  ref={backButtonRef}
+                  type="button"
+                  aria-label="Back to all genres"
+                  onClick={() => {
+                    shouldFocusPicker.current = true;
+                    setGenrePickerOpen(true);
+                  }}
+                  className="genre-back inline-flex min-h-11 items-center gap-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  <span className="md:hidden">Back</span>
+                  <span className="hidden md:inline">All genres</span>
+                </button>
+                <h3 className="break-words font-display text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight">
+                  {genres.find((genre) => genre.id === selectedGenre)?.name}
+                </h3>
+              </div>
 
               {/* Sub-Category Selector - Only show when a genre is selected */}
               {availableSubCategories.length > 0 && (
