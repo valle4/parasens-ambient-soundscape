@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/sheet";
 
 const navItems = [
+  { label: "Numbers", href: "#in-numbers" },
   { label: "Music", href: "#music" },
   { label: "About", href: "#about" },
   { label: "Contact", href: "#contact" },
@@ -24,7 +25,7 @@ const Navigation = () => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
 
-      const sections = ["music", "about", "contact"];
+      const sections = ["in-numbers", "music", "about", "contact"];
       const scrollPosition = window.scrollY + 200;
 
       for (const section of sections) {
