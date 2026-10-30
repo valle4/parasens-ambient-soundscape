@@ -2,7 +2,7 @@ import { AudioLines, Disc3, TrendingUp } from "lucide-react";
 
 const stats = [
   {
-    value: "2B",
+    value: "2B+",
     label: "Total streams",
     icon: AudioLines,
     accent: "bg-emerald-400/10 text-emerald-400 ring-emerald-400/20",
@@ -24,7 +24,7 @@ const stats = [
 const StatsSection = () => (
   <section
     id="in-numbers"
-    aria-labelledby="stats-heading"
+    aria-label="Catalogue statistics"
     className="relative isolate flex min-h-[100svh] items-center overflow-hidden border-y border-white/5 bg-[#050505] px-6 py-28 md:px-12 md:py-32 lg:px-24"
   >
     <div
@@ -32,12 +32,6 @@ const StatsSection = () => (
       className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,rgba(89,67,130,0.10),transparent_65%)]"
     />
     <div className="mx-auto w-full max-w-6xl">
-      <h2
-        id="stats-heading"
-        className="mb-12 text-center font-display text-3xl font-medium tracking-tight text-foreground md:mb-16 md:text-4xl"
-      >
-        In numbers
-      </h2>
       <dl className="mx-auto grid max-w-sm grid-cols-1 gap-4 md:max-w-none md:grid-cols-3 md:gap-5 lg:gap-6">
         {stats.map(({ value, label, icon: Icon, accent }) => (
           <div
