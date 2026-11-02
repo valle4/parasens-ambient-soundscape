@@ -8,7 +8,7 @@ const stats = [
     accent: "bg-emerald-400/10 text-emerald-400 ring-emerald-400/20",
   },
   {
-    value: "1,500+",
+    value: "2,000+",
     label: "Tracks released",
     icon: Disc3,
     accent: "bg-blue-400/10 text-blue-400 ring-blue-400/20",
